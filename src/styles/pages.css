@@ -1,0 +1,4 @@
+/* Minimal page overrides */
+.page-actions .btn {
+  white-space: nowrap;
+}
