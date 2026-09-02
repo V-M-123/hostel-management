@@ -1,31 +1,80 @@
 :root {
-  --bg-primary: #0a0a1a;
-  --bg-secondary: #12122a;
-  --bg-tertiary: #1a1a3e;
-  --bg-glass: rgba(255, 255, 255, 0.05);
-  --bg-glass-hover: rgba(255, 255, 255, 0.08);
-  --border-glass: rgba(255, 255, 255, 0.1);
-  --border-glass-strong: rgba(255, 255, 255, 0.18);
-  --text-primary: #e0e0ff;
-  --text-secondary: #8888aa;
-  --text-muted: #555577;
-  --accent: #6c5ce7;
-  --accent-hover: #7c6cf7;
-  --accent-glow: rgba(108, 92, 231, 0.3);
-  --success: #00b894;
-  --success-bg: rgba(0, 184, 148, 0.15);
-  --warning: #fdcb6e;
-  --warning-bg: rgba(253, 203, 110, 0.15);
-  --danger: #e17055;
-  --danger-bg: rgba(225, 112, 85, 0.15);
-  --info: #74b9ff;
-  --info-bg: rgba(116, 185, 255, 0.15);
+  /* Lightdash Core Palette */
+  --color-canvas-white: #ffffff;
+  --color-cloud-mist: #f6f8fa;
+  --color-frost-tint: #eceff3;
+  --color-ash-border: #cdd2d9;
+  --color-mist-border: #c1c7d0;
+  --color-fog-text: #a4abb8;
+  --color-steel-text: #818898;
+  --color-slate-body: #666d80;
+  --color-graphite-heading: #36394a;
+  --color-midnight-ink: #272835;
+  --color-onyx: #1a1b25;
+  --color-volt-violet: #5e4cff;
+  --color-lavender-wash: #c8ccf3;
+  --color-lilac-whisper: #dfdbff;
+
+  /* Theme Mapping */
+  --bg-primary: var(--color-cloud-mist);
+  --bg-secondary: var(--color-canvas-white);
+  --bg-tertiary: var(--color-frost-tint);
+  --bg-glass: #ffffff;
+  --bg-glass-hover: var(--color-cloud-mist);
+  --border-glass: var(--color-ash-border);
+  --border-glass-strong: var(--color-mist-border);
+  
+  --text-primary: var(--color-graphite-heading);
+  --text-secondary: var(--color-slate-body);
+  --text-muted: var(--color-steel-text);
+  
+  --accent: var(--color-volt-violet);
+  --accent-hover: #4b3cf0;
+  --accent-glow: rgba(94, 76, 255, 0.12);
+
+  /* Status Colors */
+  --success: #059669;
+  --success-bg: #ecfdf5;
+  --warning: #d97706;
+  --warning-bg: #fffbeb;
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+  --info: #5e4cff;
+  --info-bg: #dfdbff;
+
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  /* Typography Scale */
+  --text-caption: 12px;
+  --text-body-sm: 14px;
+  --text-body: 16px;
+  --text-subheading: 20px;
+  --text-heading-sm: 24px;
+  --text-heading: 32px;
+  --text-heading-lg: 48px;
+  --text-display: 76px;
+
+  /* Border Radius */
+  --radius-sm: 4px;
   --radius: 12px;
-  --radius-sm: 8px;
   --radius-lg: 16px;
-  --transition: 0.2s ease;
-  --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --radius-cards: 12px;
+  --radius-buttons: 8px;
+  --radius-inputs: 8px;
+  --radius-badges: 999px;
+  --radius-nav: 8px;
+
+  /* Shadows (Tinted with #272835) */
+  --shadow-subtle: 0 1px 2px rgba(39, 40, 53, 0.06), 0 0 0 1px rgba(39, 40, 53, 0.08);
+  --shadow-card: 0 2px 4px rgba(39, 40, 53, 0.04), 0 0 0 1px var(--color-ash-border);
+  --shadow-elevated: 0 12px 24px -6px rgba(39, 40, 53, 0.08), 0 0 0 1px var(--color-ash-border);
+  --shadow-lg: 0 20px 30px -10px rgba(39, 40, 53, 0.12), 0 0 0 1px var(--color-ash-border);
+  --shadow: var(--shadow-card);
+
+  --transition: 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 * {
@@ -37,22 +86,39 @@
 body {
   font-family: var(--font-family);
   background-color: var(--bg-primary);
+  /* Drafting paper subtle dot/pixel grid pattern */
+  background-image: radial-gradient(rgba(39, 40, 53, 0.07) 1px, transparent 0);
+  background-size: 24px 24px;
+  background-position: -19px -19px;
   color: var(--text-primary);
   line-height: 1.5;
+  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6, .page-title, .brand-logo {
+  font-family: var(--font-display);
+  color: var(--color-graphite-heading);
+  letter-spacing: -0.025em;
+  font-weight: 600;
+}
+
+code, pre, .mono {
+  font-family: var(--font-mono);
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-primary);
+  background: var(--color-cloud-mist);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--bg-tertiary);
+  background: var(--color-ash-border);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+  background: var(--color-steel-text);
 }
