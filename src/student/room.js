@@ -85,10 +85,13 @@ export async function render(container) {
   roommatesTitle.textContent = 'Roommates';
   container.appendChild(roommatesTitle);
 
-  const { data: roommates, error: roomError } = await supabase
-    .rpc('get_my_roommates');
-
-  if (roomError) { showToast(roomError.message, 'error'); return; }
+  let roommates = [];
+  try {
+    const { data: rmData } = await supabase.rpc('get_my_roommates');
+    roommates = rmData || [];
+  } catch (e) {
+    console.warn('Roommates query error:', e);
+  }
 
   const rmPanel = document.createElement('div');
   rmPanel.className = 'glass-panel';

@@ -1,3 +1,5 @@
+import { showToast } from './toast.js';
+
 export function openModal(title, bodyHTML, onSubmit) {
   closeModal(); // ensure no duplicates
 
@@ -47,13 +49,19 @@ export function openModal(title, bodyHTML, onSubmit) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
+    
+    // Support both FormData.get('field') and data.field
+    const entries = Object.fromEntries(formData.entries());
+    Object.assign(formData, entries);
     
     submitBtn.disabled = true;
     submitBtn.textContent = 'Saving...';
     
     try {
-      await onSubmit(data);
+      await onSubmit(formData, entries);
+    } catch (err) {
+      console.error('[Modal] Submit handler error:', err);
+      showToast(err.message || 'An unexpected error occurred', 'error');
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Submit';

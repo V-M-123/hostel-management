@@ -94,10 +94,16 @@ export async function render(container) {
       
       if (isEdit) {
         const { error } = await supabase.from('announcements').update({ title, message, hostel_id: hostelId }).eq('id', announcement.id);
-        if (error) throw error;
+        if (error) {
+          showToast(error.message, 'error');
+          return;
+        }
       } else {
         const { error } = await supabase.from('announcements').insert({ title, message, hostel_id: hostelId, posted_by: user.id });
-        if (error) throw error;
+        if (error) {
+          showToast(error.message, 'error');
+          return;
+        }
       }
       
       showToast(`Announcement ${isEdit ? 'updated' : 'created'}`);

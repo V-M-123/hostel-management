@@ -103,10 +103,16 @@ export async function render(container) {
       const hostelId = formData.get('hostel_id');
       
       const { error } = await supabase.rpc('assign_warden_to_hostel', { p_warden_id: userId, p_hostel_id: hostelId });
-      if (error) throw error;
-      
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+
       const { error: roleError } = await supabase.from('profiles').update({ role: 'warden' }).eq('id', userId);
-      if (roleError) throw roleError;
+      if (roleError) {
+        showToast(roleError.message, 'error');
+        return;
+      }
 
       showToast('Warden assigned successfully');
       closeModal();

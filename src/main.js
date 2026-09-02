@@ -203,6 +203,8 @@ function renderAppShell(container, user) {
     '#/admin/dashboard': () => import('./admin/dashboard.js'),
     '#/admin/hostels': () => import('./admin/hostels.js'),
     '#/admin/wardens': () => import('./admin/wardens.js'),
+    '#/admin/students': () => import('./admin/students.js'),
+    '#/admin/complaints': () => import('./admin/complaints.js'),
     '#/admin/fees': () => import('./admin/fees.js'),
     '#/admin/announcements': () => import('./admin/announcements.js'),
     '#/warden/dashboard': () => import('./warden/dashboard.js'),

@@ -79,15 +79,14 @@ export async function render(container) {
 
   const openHostelModal = (hostel) => {
     const isEdit = !!hostel;
-    // Escaping the values appropriately if possible, but innerHTML is fine for developer written layout. We should just append inputs if possible but string template is required by spec.
     const bodyHTML = `
       <div class="form-group">
         <label class="form-label">Name</label>
-        <input type="text" name="name" class="form-input" id="hostelName" required />
+        <input type="text" name="name" class="form-input" value="${hostel ? hostel.name : ''}" required />
       </div>
       <div class="form-group">
         <label class="form-label">Address</label>
-        <textarea name="address" class="form-textarea" id="hostelAddress" required></textarea>
+        <textarea name="address" class="form-textarea" required>${hostel ? hostel.address || '' : ''}</textarea>
       </div>
     `;
 
@@ -95,22 +94,21 @@ export async function render(container) {
       const name = formData.get('name');
       const address = formData.get('address');
       
+      let res;
       if (isEdit) {
-        const { error } = await supabase.from('hostels').update({ name, address }).eq('id', hostel.id);
-        if (error) throw error;
+        res = await supabase.from('hostels').update({ name, address }).eq('id', hostel.id);
       } else {
-        const { error } = await supabase.from('hostels').insert({ name, address });
-        if (error) throw error;
+        res = await supabase.from('hostels').insert({ name, address });
       }
-      showToast(`Hostel ${isEdit ? 'updated' : 'created'} successfully`);
-      closeModal();
-      loadData();
+
+      if (res.error) {
+        showToast(res.error.message, 'error');
+      } else {
+        showToast(`Hostel ${isEdit ? 'updated' : 'created'} successfully`, 'success');
+        closeModal();
+        loadData();
+      }
     });
-    
-    if (isEdit) {
-       document.getElementById('hostelName').value = hostel.name;
-       document.getElementById('hostelAddress').value = hostel.address;
-    }
   };
 
   loadData();

@@ -44,11 +44,16 @@ export async function render(container) {
   const statsGrid = document.createElement('div');
   statsGrid.className = 'cards-grid';
 
+  const occupiedRooms = stats.occupied_rooms ?? stats.occupied_beds ?? 0;
+  const vacantRooms = stats.vacant_rooms ?? stats.vacant_beds ?? 0;
+  const totalRooms = stats.total_rooms ?? (occupiedRooms + vacantRooms);
+  const wardenOccPct = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0;
+
   const cardData = [
-    { label: 'Total Rooms', value: stats.total_rooms, icon: '🚪' },
-    { label: 'Occupied Beds', value: stats.occupied_beds, icon: '🛏️' },
-    { label: 'Vacant Beds', value: stats.vacant_beds, icon: '✅' },
-    { label: 'Open Complaints', value: stats.open_complaints, icon: '📝' }
+    { label: 'Total Rooms', value: totalRooms, icon: '🚪' },
+    { label: 'Occupied Rooms', value: occupiedRooms, icon: '🛏️' },
+    { label: 'Occupancy %', value: `${wardenOccPct}%`, icon: '📊' },
+    { label: 'Open Complaints', value: stats.open_complaints ?? 0, icon: '📝' }
   ];
 
   cardData.forEach(c => {

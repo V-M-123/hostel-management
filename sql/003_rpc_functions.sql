@@ -72,6 +72,7 @@ BEGIN
         'total_occupied', v_total_occupied,
         'total_capacity', v_total_capacity,
         'occupancy_percentage', ROUND(v_occupancy_percentage, 2),
+        'occupancy_rate', ROUND(v_occupancy_percentage, 2),
         'pending_complaints', v_pending_complaints,
         'total_students', v_total_students
     );

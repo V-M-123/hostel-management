@@ -47,6 +47,8 @@ function getLinks(role) {
       { label: 'Dashboard', icon: '📊', path: '#/admin/dashboard' },
       { label: 'Hostels', icon: '🏢', path: '#/admin/hostels' },
       { label: 'Wardens', icon: '👤', path: '#/admin/wardens' },
+      { label: 'Students', icon: '🎓', path: '#/admin/students' },
+      { label: 'Complaints', icon: '📝', path: '#/admin/complaints' },
       { label: 'Fee Reports', icon: '💰', path: '#/admin/fees' },
       { label: 'Announcements', icon: '📢', path: '#/admin/announcements' }
     ];

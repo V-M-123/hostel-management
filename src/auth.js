@@ -21,44 +21,78 @@ export async function signOut() {
 export async function getCurrentUser() {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {
-    if (authError) console.error('Auth getUser error:', authError);
+    if (authError) console.error('[Auth] getUser error:', authError);
     return null;
   }
 
+  // 1. Determine intended role from metadata or email naming convention
+  let inferredRole = user.user_metadata?.role;
+  const userEmail = (user.email || '').toLowerCase();
+  
+  if (!inferredRole) {
+    if (userEmail.startsWith('admin') || userEmail.includes('@admin') || userEmail.includes('admin@')) {
+      inferredRole = 'admin';
+    } else if (userEmail.startsWith('warden') || userEmail.includes('@warden') || userEmail.includes('warden@')) {
+      inferredRole = 'warden';
+    } else {
+      inferredRole = 'student';
+    }
+  }
+
+  const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+  const phone = user.user_metadata?.phone || null;
+
+  // 2. Fetch existing profile
   try {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
-    
-    if (data) {
-      return data;
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profile) {
+      // If profile exists but role should be upgraded/corrected
+      const effectiveRole = profile.role || inferredRole;
+      
+      // Role auto-healing removed due to RLS policies.
+      // Role auto-healing removed due to RLS policies.
+
+      return {
+        ...profile,
+        email: user.email,
+        role: profile.role || inferredRole
+      };
     }
 
     if (error) {
-      console.warn('Could not read profiles table (table might not exist yet or RLS blocked):', error);
+      console.warn('[Auth] Profiles table read warning:', error);
     }
   } catch (err) {
-    console.warn('Profiles query exception:', err);
+    console.warn('[Auth] Profiles query exception:', err);
   }
 
-  // Fallback for authenticated users if profile table has an issue or row is missing
-  const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
-  const phone = user.user_metadata?.phone || null;
-  const role = user.user_metadata?.role || 'student';
-
+  // 3. Auto-provision profile if missing
   try {
     const { data: newProfile } = await supabase
       .from('profiles')
-      .insert({
+      .upsert({
         id: user.id,
         full_name: fullName,
         phone: phone,
-        role: role
+        role: inferredRole
       })
       .select()
       .maybeSingle();
 
-    if (newProfile) return newProfile;
+    if (newProfile) {
+      return {
+        ...newProfile,
+        email: user.email,
+        role: newProfile.role || inferredRole
+      };
+    }
   } catch (err) {
-    console.warn('Profile auto-creation exception:', err);
+    console.warn('[Auth] Profile creation exception:', err);
   }
 
   return {
@@ -66,7 +100,7 @@ export async function getCurrentUser() {
     email: user.email,
     full_name: fullName,
     phone: phone,
-    role: role
+    role: inferredRole
   };
 }
 

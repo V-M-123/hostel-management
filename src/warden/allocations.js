@@ -133,7 +133,10 @@ export async function render(container) {
       const room_id = formData.get('room_id');
       
       const { error } = await supabase.from('room_allocations').insert({ room_id, student_id, status: 'active' });
-      if (error) throw error;
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
       
       showToast('Student allocated successfully');
       closeModal();

@@ -116,13 +116,19 @@ export async function render(container) {
       if (isEdit) {
         if (room.occupied_count > capacity) {
             showToast('Capacity cannot be less than current occupied count', 'error');
-            throw new Error('Invalid capacity');
+            return;
         }
         const { error } = await supabase.from('rooms').update({ room_number, floor, capacity }).eq('id', room.id);
-        if (error) throw error;
+        if (error) {
+          showToast(error.message, 'error');
+          return;
+        }
       } else {
         const { error } = await supabase.from('rooms').insert({ hostel_id: hostelId, room_number, floor, capacity });
-        if (error) throw error;
+        if (error) {
+          showToast(error.message, 'error');
+          return;
+        }
       }
       
       showToast(`Room ${isEdit ? 'updated' : 'created'}`);

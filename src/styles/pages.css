@@ -1,5 +1,5 @@
 /* ============================================================================
-   LIGHTDASH DESIGN SYSTEM — PAGE STYLES
+   LINEAR DESIGN SYSTEM — PAGE STYLES
    ============================================================================ */
 
 /* Auth Page (Sign In / Sign Up) */
@@ -9,38 +9,38 @@
   justify-content: center;
   min-height: 100vh;
   padding: 24px;
-  background-color: var(--color-cloud-mist);
-  background-image: radial-gradient(rgba(39, 40, 53, 0.08) 1px, transparent 0);
-  background-size: 24px 24px;
+  background-color: var(--color-void);
+  /* Atmospheric radial vignette */
+  background-image: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
 }
 
 .auth-card {
   width: 100%;
-  max-width: 440px;
-  background: var(--color-canvas-white);
-  border: 1px solid var(--color-ash-border);
+  max-width: 400px;
+  background: var(--color-carbon);
+  border: 1px solid var(--color-graphite);
   border-radius: var(--radius-cards);
   box-shadow: var(--shadow-lg);
-  padding: 36px 32px;
+  padding: 32px 28px;
 }
 
 .auth-header {
   text-align: center;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .auth-header h1 {
   font-family: var(--font-display);
   font-size: var(--text-heading-sm);
-  font-weight: 700;
-  color: var(--color-graphite-heading);
-  letter-spacing: -0.025em;
-  margin-bottom: 6px;
+  font-weight: 510;
+  color: var(--color-paper);
+  letter-spacing: -0.022em;
+  margin-bottom: 4px;
 }
 
 .auth-header p {
-  font-size: var(--text-body-sm);
-  color: var(--color-slate-body);
+  font-size: 13px;
+  color: var(--color-fog);
 }
 
 .auth-form {
@@ -49,13 +49,13 @@
 }
 
 .auth-form .btn {
-  margin-top: 10px;
-  padding: 12px;
-  font-size: var(--text-body-sm);
-  font-weight: 600;
-  background: var(--color-volt-violet);
-  border-color: var(--color-volt-violet);
-  color: #ffffff;
+  margin-top: 8px;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 510;
+  background: var(--color-acid-lime);
+  border-color: var(--color-acid-lime);
+  color: var(--color-void);
 }
 
 .auth-form .btn:hover {
@@ -65,107 +65,105 @@
 
 .auth-footer {
   text-align: center;
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid var(--color-ash-border);
-  font-size: var(--text-body-sm);
-  color: var(--color-slate-body);
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-graphite);
+  font-size: 13px;
+  color: var(--color-fog);
 }
 
 .auth-footer a {
-  color: var(--color-volt-violet);
-  font-weight: 600;
+  color: var(--color-paper);
+  font-weight: 510;
   text-decoration: none;
   cursor: pointer;
 }
 
 .auth-footer a:hover {
-  text-decoration: underline;
+  color: var(--color-acid-lime);
 }
 
 /* Room Occupancy Visualizer */
 .rooms-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
 }
 
 .room-card {
-  padding: 20px;
-  background: var(--color-canvas-white);
-  border: 1px solid var(--color-ash-border);
+  padding: 16px;
+  background: var(--color-carbon);
+  border: 1px solid var(--color-graphite);
   border-radius: var(--radius-cards);
-  box-shadow: var(--shadow-card);
   transition: var(--transition);
 }
 
 .room-card:hover {
-  box-shadow: var(--shadow-elevated);
-  border-color: var(--color-mist-border);
+  background: var(--color-obsidian);
+  border-color: var(--color-smoke);
 }
 
 .room-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .room-card-number {
   font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-graphite-heading);
+  font-size: 15px;
+  font-weight: 510;
+  color: var(--color-paper);
 }
 
 .progress-bar-bg {
   width: 100%;
-  height: 6px;
-  background: var(--color-frost-tint);
-  border-radius: 999px;
+  height: 4px;
+  background: var(--color-obsidian);
+  border-radius: 9999px;
   overflow: hidden;
-  margin: 10px 0;
+  margin: 8px 0;
 }
 
 .progress-bar-fill {
   height: 100%;
-  background: var(--color-volt-violet);
-  border-radius: 999px;
-  transition: width 0.3s ease;
+  background: var(--color-acid-lime);
+  border-radius: 9999px;
+  transition: width 0.2s ease;
 }
 
 /* Notice / Announcement Cards */
 .announcement-card {
-  background: var(--color-canvas-white);
-  border: 1px solid var(--color-ash-border);
+  background: var(--color-carbon);
+  border: 1px solid var(--color-graphite);
   border-radius: var(--radius-cards);
-  box-shadow: var(--shadow-card);
-  padding: 24px;
+  padding: 20px;
   transition: var(--transition);
 }
 
 .announcement-card:hover {
-  box-shadow: var(--shadow-elevated);
+  border-color: var(--color-smoke);
 }
 
 .announcement-title {
   font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--color-graphite-heading);
-  margin-bottom: 8px;
+  font-size: 15px;
+  font-weight: 510;
+  color: var(--color-paper);
+  margin-bottom: 6px;
 }
 
 .announcement-meta {
-  font-size: var(--text-caption);
-  color: var(--color-steel-text);
-  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--color-fog);
+  margin-bottom: 10px;
   display: flex;
-  gap: 16px;
+  gap: 12px;
 }
 
 .announcement-body {
-  font-size: var(--text-body-sm);
-  color: var(--color-slate-body);
-  line-height: 1.6;
+  font-size: 13px;
+  color: var(--color-mist);
+  line-height: 1.5;
 }

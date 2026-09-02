@@ -136,7 +136,10 @@ export async function render(container) {
         p_status: status
       });
       
-      if (error) throw error;
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
       showToast('Fee recorded successfully');
       closeModal();
       loadData();
@@ -147,15 +150,15 @@ export async function render(container) {
     const bodyHTML = `
       <div class="form-group">
         <label class="form-label">Status</label>
-        <select name="status" class="form-select" id="editStatus" required>
-          <option value="due">Due</option>
-          <option value="paid">Paid</option>
-          <option value="overdue">Overdue</option>
+        <select name="status" class="form-select" required>
+          <option value="due" ${row.status === 'due' ? 'selected' : ''}>Due</option>
+          <option value="paid" ${row.status === 'paid' ? 'selected' : ''}>Paid</option>
+          <option value="overdue" ${row.status === 'overdue' ? 'selected' : ''}>Overdue</option>
         </select>
       </div>
       <div class="form-group">
         <label class="form-label">Paid Date (if paid)</label>
-        <input type="date" name="paid_date" class="form-input" id="editPaidDate" />
+        <input type="date" name="paid_date" class="form-input" value="${row.paid_date ? row.paid_date.split('T')[0] : ''}" />
       </div>
     `;
 
@@ -165,16 +168,14 @@ export async function render(container) {
       
       const { error } = await supabase.from('fee_payments').update({ status, paid_date: paidDate }).eq('id', row.id);
       
-      if (error) throw error;
-      showToast('Fee updated successfully');
-      closeModal();
-      loadData();
+      if (error) {
+        showToast(error.message, 'error');
+      } else {
+        showToast('Fee updated successfully', 'success');
+        closeModal();
+        loadData();
+      }
     });
-    
-    document.getElementById('editStatus').value = row.status;
-    if (row.paid_date) {
-        document.getElementById('editPaidDate').value = row.paid_date.split('T')[0];
-    }
   };
 
   loadData();

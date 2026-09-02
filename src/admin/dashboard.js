@@ -34,11 +34,12 @@ export async function render(container) {
   const statsGrid = document.createElement('div');
   statsGrid.className = 'cards-grid';
 
+  const occRate = stats.occupancy_percentage ?? stats.occupancy_rate ?? 0;
   const cardData = [
-    { label: 'Total Hostels', value: stats.total_hostels, icon: '🏢' },
-    { label: 'Total Rooms', value: stats.total_rooms, icon: '🚪' },
-    { label: 'Occupancy %', value: stats.occupancy_rate + '%', icon: '📊' },
-    { label: 'Pending Complaints', value: stats.pending_complaints, icon: '📝' }
+    { label: 'Total Hostels', value: stats.total_hostels ?? 0, icon: '🏢' },
+    { label: 'Total Rooms', value: stats.total_rooms ?? 0, icon: '🚪' },
+    { label: 'Occupancy %', value: `${occRate}%`, icon: '📊' },
+    { label: 'Pending Complaints', value: stats.pending_complaints ?? 0, icon: '📝' }
   ];
 
   cardData.forEach(c => {
@@ -66,6 +67,8 @@ export async function render(container) {
   const actions = [
     { label: 'Hostels', icon: '🏢', path: '#/admin/hostels' },
     { label: 'Wardens', icon: '👤', path: '#/admin/wardens' },
+    { label: 'Students', icon: '🎓', path: '#/admin/students' },
+    { label: 'Complaints', icon: '📝', path: '#/admin/complaints' },
     { label: 'Fee Reports', icon: '💰', path: '#/admin/fees' },
     { label: 'Announcements', icon: '📢', path: '#/admin/announcements' },
   ];
@@ -95,7 +98,7 @@ export async function render(container) {
 
   const { data: complaints, error: compError } = await supabase
     .from('complaints')
-    .select('*, profiles:student_id(full_name), rooms:room_id(room_number, hostels:hostel_id(name))')
+    .select('*, student:student_id(full_name), room:room_id(room_number, hostel:hostel_id(name))')
     .order('created_at', { ascending: false })
     .limit(10);
 
@@ -106,19 +109,18 @@ export async function render(container) {
 
   renderTable(tableContainer, {
     columns: [
-      { key: 'student', label: 'Student', render: (val, row) => row.profiles?.full_name || 'N/A' },
-      { key: 'hostel', label: 'Hostel', render: (val, row) => row.rooms?.hostels?.name || 'N/A' },
-      { key: 'room', label: 'Room', render: (val, row) => row.rooms?.room_number || 'N/A' },
-      { key: 'category', label: 'Category', render: (val) => val.charAt(0).toUpperCase() + val.slice(1) },
-      { key: 'status', label: 'Status', render: (val, row) => {
-          const badge = document.createElement('span');
-          badge.className = `status-badge status-${row.status}`;
-          badge.textContent = row.status.replace('_', ' ').toUpperCase();
-          return badge;
+      { key: 'student', label: 'Student', render: (val, row) => row.student?.full_name || 'N/A' },
+      { key: 'room', label: 'Location', render: (val, row) => `${row.room?.hostel?.name || 'Block'} — Room ${row.room?.room_number || '-'}` },
+      { key: 'category', label: 'Category', render: (val) => val.toUpperCase() },
+      { key: 'status', label: 'Status', render: (val) => {
+          const span = document.createElement('span');
+          span.className = `status-badge status-${val}`;
+          span.textContent = val.toUpperCase().replace('_', ' ');
+          return span;
       }},
-      { key: 'date', label: 'Date', render: (val, row) => new Date(row.created_at).toLocaleDateString() }
+      { key: 'created_at', label: 'Reported', render: (val) => new Date(val).toLocaleDateString() }
     ],
     rows: complaints || [],
-    emptyMessage: 'No recent complaints found.'
+    emptyMessage: 'No complaints logged'
   });
 }
