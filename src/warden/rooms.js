@@ -10,8 +10,12 @@ export async function render(container) {
   const { data: hostel, error: hError } = await supabase.from('hostels').select('id').eq('warden_id', user.id).single();
 
   if (hError || !hostel) {
-    const msg = document.createElement('p');
-    msg.textContent = 'You are not assigned to any hostel block yet.';
+    const msg = document.createElement('div');
+    msg.className = 'empty-state';
+    msg.innerHTML = `
+      <div class="empty-state-icon">🏢</div>
+      <div class="empty-state-text">You are not assigned to any hostel block yet.</div>
+    `;
     container.appendChild(msg);
     return;
   }
@@ -54,16 +58,19 @@ export async function render(container) {
         { key: 'room_number', label: 'Room Number', render: (val, row) => row.room_number },
         { key: 'floor', label: 'Floor', render: (val, row) => row.floor.toString() },
         { key: 'capacity', label: 'Capacity', render: (val, row) => row.capacity.toString() },
-        { key: 'occupied', label: 'Occupied', render: (val, row) => row.occupied_count.toString() },
+        { key: 'occupied', label: 'Occupied', render: (val, row) => (row.occupied_count || 0).toString() },
         { key: 'status', label: 'Status', render: (val, row) => {
+            const occ = row.occupied_count || 0;
             let status = 'Vacant';
-            if (row.occupied_count >= row.capacity) status = 'Full';
-            else if (row.occupied_count > 0) status = 'Partial';
+            let statusClass = 'status-approved';
             
-            let statusClass = 'status-vacated'; // danger
-            if (status === 'Full') statusClass = 'status-active'; // info
-            else if (status === 'Partial') statusClass = 'status-pending'; // warning
-            else if (status === 'Vacant') statusClass = 'status-approved'; // success
+            if (occ >= row.capacity) {
+              status = 'Full';
+              statusClass = 'status-vacated';
+            } else if (occ > 0) {
+              status = 'Partial';
+              statusClass = 'status-pending';
+            }
 
             const badge = document.createElement('span');
             badge.className = `status-badge ${statusClass}`;
@@ -75,14 +82,14 @@ export async function render(container) {
       actions: [
         { label: 'Edit', class: 'btn btn-sm btn-secondary', onClick: (row) => openRoomModal(row) },
         { label: 'Delete', class: 'btn btn-sm btn-danger', onClick: async (row) => {
-            if (row.occupied_count > 0) {
+            if ((row.occupied_count || 0) > 0) {
               showToast('Cannot delete room with active allocations', 'error');
               return;
             }
             if (confirm(`Delete room ${row.room_number}?`)) {
               const { error } = await supabase.from('rooms').delete().eq('id', row.id);
               if (error) showToast(error.message, 'error');
-              else { showToast('Deleted successfully'); loadData(); }
+              else { showToast('Room deleted successfully', 'success'); await loadData(); }
             }
           }
         }
@@ -96,15 +103,15 @@ export async function render(container) {
     const bodyHTML = `
       <div class="form-group">
         <label class="form-label">Room Number</label>
-        <input type="text" name="room_number" class="form-input" id="rNum" required />
+        <input type="text" name="room_number" class="form-input" value="${room ? room.room_number : ''}" required />
       </div>
       <div class="form-group">
         <label class="form-label">Floor</label>
-        <input type="number" name="floor" class="form-input" id="rFloor" required />
+        <input type="number" name="floor" class="form-input" value="${room ? room.floor : '1'}" required />
       </div>
       <div class="form-group">
         <label class="form-label">Capacity</label>
-        <input type="number" name="capacity" class="form-input" id="rCap" min="1" required />
+        <input type="number" name="capacity" class="form-input" value="${room ? room.capacity : '2'}" min="1" required />
       </div>
     `;
 
@@ -113,35 +120,26 @@ export async function render(container) {
       const floor = parseInt(formData.get('floor'));
       const capacity = parseInt(formData.get('capacity'));
       
+      let res;
       if (isEdit) {
-        if (room.occupied_count > capacity) {
-            showToast('Capacity cannot be less than current occupied count', 'error');
-            return;
-        }
-        const { error } = await supabase.from('rooms').update({ room_number, floor, capacity }).eq('id', room.id);
-        if (error) {
-          showToast(error.message, 'error');
+        if ((room.occupied_count || 0) > capacity) {
+          showToast('Capacity cannot be less than current occupied count', 'error');
           return;
         }
+        res = await supabase.from('rooms').update({ room_number, floor, capacity }).eq('id', room.id);
       } else {
-        const { error } = await supabase.from('rooms').insert({ hostel_id: hostelId, room_number, floor, capacity });
-        if (error) {
-          showToast(error.message, 'error');
-          return;
-        }
+        res = await supabase.from('rooms').insert({ hostel_id: hostelId, room_number, floor, capacity });
       }
-      
-      showToast(`Room ${isEdit ? 'updated' : 'created'}`);
-      closeModal();
-      loadData();
+
+      if (res.error) {
+        showToast(res.error.message, 'error');
+      } else {
+        showToast(`Room ${isEdit ? 'updated' : 'created'} successfully`, 'success');
+        closeModal();
+        await loadData();
+      }
     });
-    
-    if (isEdit) {
-        document.getElementById('rNum').value = room.room_number;
-        document.getElementById('rFloor').value = room.floor;
-        document.getElementById('rCap').value = room.capacity;
-    }
   };
 
-  loadData();
+  await loadData();
 }

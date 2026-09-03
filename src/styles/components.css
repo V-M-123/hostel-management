@@ -62,11 +62,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--icon-box-bg);
   border-radius: 6px;
   margin-bottom: 6px;
   border: 1px solid var(--color-graphite);
-  color: var(--color-acid-lime);
+  color: var(--accent);
 }
 
 .stat-card .stat-value {
@@ -112,7 +112,7 @@
 
 .action-card .action-icon {
   font-size: 16px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--icon-box-bg);
   width: 30px;
   height: 30px;
   display: flex;
@@ -146,41 +146,70 @@
   letter-spacing: -0.011em;
 }
 
-/* Primary Action Button (Acid Lime Flashlight) */
+/* Primary Action Button */
 .btn-primary, .btn-accent {
-  background: var(--color-acid-lime);
-  color: var(--color-void);
-  border-color: var(--color-acid-lime);
-  font-weight: 510;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+  font-weight: 600;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.22);
 }
 
 .btn-primary:hover, .btn-accent:hover {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
+  color: var(--primary-foreground);
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.35);
 }
 
-/* Ghost / Secondary Button */
-.btn-secondary, .btn-ghost {
+/* Secondary Button */
+.btn-secondary {
+  background: var(--secondary);
+  border-color: var(--secondary);
+  color: var(--secondary-foreground);
+  font-weight: 600;
+}
+
+.btn-secondary:hover {
+  background: #25be7f;
+  border-color: #25be7f;
+  color: var(--secondary-foreground);
+}
+
+/* Outline & Ghost Button */
+.btn-outline {
   background: transparent;
   border-color: var(--color-graphite);
-  color: var(--color-mist);
+  color: var(--color-paper);
 }
 
-.btn-secondary:hover, .btn-ghost:hover {
+.btn-outline:hover {
   background: var(--color-obsidian);
   border-color: var(--color-smoke);
   color: var(--color-paper);
 }
 
-.btn-danger {
-  background: var(--danger-bg);
-  border-color: rgba(235, 87, 87, 0.3);
-  color: var(--danger);
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-paper);
 }
 
-.btn-danger:hover {
-  background: rgba(235, 87, 87, 0.2);
-  border-color: var(--danger);
+.btn-ghost:hover {
+  background: var(--color-obsidian);
+  color: var(--color-paper);
+}
+
+.btn-danger, .btn-delete {
+  background: var(--destructive);
+  border-color: var(--destructive);
+  color: var(--destructive-foreground);
+  font-weight: 600;
+}
+
+.btn-danger:hover, .btn-delete:hover {
+  background: #991b1b;
+  border-color: #991b1b;
 }
 
 .btn-sm {
@@ -204,10 +233,10 @@
 
 .form-input, .form-select, .form-textarea {
   width: 100%;
-  padding: 8px 12px;
+  padding: 10px 14px;
   border-radius: var(--radius-inputs);
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
   color: var(--color-mist);
   font-family: var(--font-family);
   font-size: 13px;
@@ -220,8 +249,9 @@
 }
 
 .form-input:focus, .form-select:focus, .form-textarea:focus {
-  border-color: var(--color-mist);
-  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--accent);
+  background: var(--input-focus-bg);
+  box-shadow: 0 0 0 2px var(--accent-glow);
 }
 
 /* Badges / Status Tags */
@@ -241,7 +271,7 @@
 .status-active, .status-paid, .status-resolved, .status-approved {
   background: var(--success-bg);
   color: var(--success);
-  border-color: rgba(39, 166, 68, 0.3);
+  border-color: rgba(45, 212, 143, 0.3);
 }
 
 .status-due, .status-open, .status-pending, .status-in_progress {
@@ -253,7 +283,7 @@
 .status-overdue, .status-rejected, .status-vacated {
   background: var(--danger-bg);
   color: var(--danger);
-  border-color: rgba(235, 87, 87, 0.3);
+  border-color: rgba(185, 28, 28, 0.3);
 }
 
 .role-badge {
@@ -261,21 +291,27 @@
   border-radius: var(--radius-pills);
   font-size: 11px;
   font-weight: 510;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--color-obsidian);
   color: var(--color-mist);
   border: 1px solid var(--color-graphite);
 }
 
 .role-admin {
-  background: rgba(228, 242, 34, 0.1);
-  color: var(--color-acid-lime);
-  border-color: rgba(228, 242, 34, 0.3);
+  background: rgba(0, 240, 255, 0.15);
+  color: var(--color-cyber-cyan);
+  border-color: rgba(0, 240, 255, 0.35);
 }
 
 .role-warden {
-  background: rgba(99, 102, 241, 0.1);
-  color: var(--color-iris-violet);
-  border-color: rgba(99, 102, 241, 0.3);
+  background: rgba(45, 212, 143, 0.15);
+  color: var(--color-cyber-green);
+  border-color: rgba(45, 212, 143, 0.35);
+}
+
+.role-student {
+  background: var(--color-obsidian);
+  color: var(--color-mist);
+  border-color: var(--color-graphite);
 }
 
 /* Tables */
@@ -331,7 +367,7 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(8, 9, 10, 0.75);
+  background: var(--modal-overlay-bg);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -465,4 +501,60 @@
 @keyframes toastIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-obsidian);
+  border: 1px solid var(--color-graphite);
+  border-radius: var(--radius-pills);
+  padding: 4px 10px 4px 6px;
+  cursor: pointer;
+  transition: var(--transition);
+  color: var(--color-mist);
+  font-size: 12px;
+  font-weight: 510;
+  font-family: var(--font-family);
+  user-select: none;
+  line-height: 1;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--color-carbon);
+  border-color: var(--color-smoke);
+  color: var(--color-paper);
+}
+
+.theme-toggle-track {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-carbon);
+  border: 1px solid var(--color-graphite);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  font-size: 12px;
+}
+
+.theme-toggle-icon {
+  line-height: 1;
+}
+
+.theme-toggle-label {
+  font-size: 12px;
+  color: var(--color-mist);
+  text-transform: capitalize;
+}
+
+.auth-theme-toggle {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
 }

@@ -40,7 +40,7 @@ export function renderTable(container, options) {
         if (result instanceof HTMLElement) {
           td.appendChild(result);
         } else {
-          td.textContent = result;
+          td.textContent = result !== undefined && result !== null ? result : '';
         }
       } else {
         td.textContent = row[col.key] || '';
@@ -50,12 +50,24 @@ export function renderTable(container, options) {
     
     if (actions && actions.length > 0) {
       const tdActions = document.createElement('td');
+      tdActions.style.whiteSpace = 'nowrap';
       actions.forEach(action => {
         const btn = document.createElement('button');
         btn.className = `btn btn-sm ${action.class || 'btn-secondary'}`;
         btn.style.marginRight = '8px';
         btn.textContent = action.label;
-        btn.onclick = () => action.onClick(row);
+        btn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          btn.disabled = true;
+          try {
+            await action.onClick(row);
+          } catch (err) {
+            console.error('[Table Action Error]', err);
+          } finally {
+            btn.disabled = false;
+          }
+        });
         tdActions.appendChild(btn);
       });
       tr.appendChild(tdActions);

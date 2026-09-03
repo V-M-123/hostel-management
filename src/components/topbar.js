@@ -1,4 +1,5 @@
 import { signOut } from '../auth.js';
+import { createThemeToggle } from './themeToggle.js';
 
 export function renderTopbar(container, user) {
   container.innerHTML = '';
@@ -17,13 +18,16 @@ export function renderTopbar(container, user) {
 
   const userSec = document.createElement('div');
   userSec.className = 'topbar-user';
+
+  const themeToggle = createThemeToggle();
   
   const name = document.createElement('span');
+  name.className = 'topbar-user-name';
   name.textContent = user.full_name || user.email || 'User';
   
   const role = user.role || 'student';
   const badge = document.createElement('span');
-  badge.className = `badge badge-${role}`;
+  badge.className = `badge badge-${role} role-badge`;
   badge.textContent = role.charAt(0).toUpperCase() + role.slice(1);
   
   const logoutBtn = document.createElement('button');
@@ -34,6 +38,7 @@ export function renderTopbar(container, user) {
     window.location.reload();
   };
 
+  userSec.appendChild(themeToggle);
   userSec.appendChild(name);
   userSec.appendChild(badge);
   userSec.appendChild(logoutBtn);

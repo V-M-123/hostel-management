@@ -4,6 +4,7 @@
 
 /* Auth Page (Sign In / Sign Up) */
 .auth-container {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11,7 +12,8 @@
   padding: 24px;
   background-color: var(--color-void);
   /* Atmospheric radial vignette */
-  background-image: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+  background-image: var(--auth-vignette);
+  transition: background-color 0.2s ease;
 }
 
 .auth-card {
@@ -53,9 +55,9 @@
   padding: 10px;
   font-size: 13px;
   font-weight: 510;
-  background: var(--color-acid-lime);
-  border-color: var(--color-acid-lime);
-  color: var(--color-void);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
 }
 
 .auth-form .btn:hover {
@@ -80,7 +82,7 @@
 }
 
 .auth-footer a:hover {
-  color: var(--color-acid-lime);
+  color: var(--accent);
 }
 
 /* Room Occupancy Visualizer */
@@ -128,7 +130,7 @@
 
 .progress-bar-fill {
   height: 100%;
-  background: var(--color-acid-lime);
+  background: var(--accent);
   border-radius: 9999px;
   transition: width 0.2s ease;
 }
