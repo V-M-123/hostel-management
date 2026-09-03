@@ -16,11 +16,18 @@ document.addEventListener('DOMContentLoaded', () => {
   initApp();
 });
 
+let currentInitId = 0;
+
 async function initApp() {
+  const initId = ++currentInitId;
   const appContainer = document.getElementById('app');
-  appContainer.innerHTML = '';
   
   const user = await getCurrentUser();
+  
+  // If another initApp() started after this one, discard this run
+  if (initId !== currentInitId) return;
+
+  appContainer.innerHTML = '';
   if (!user) {
     renderAuthPage(appContainer);
   } else {
@@ -100,6 +107,7 @@ function renderAuthPage(container) {
           submitBtn.textContent = 'Sign In';
         } else {
           showToast('Signed in successfully!', 'success');
+          await initApp();
         }
       } else {
         const fullName = fd.get('fullName');
@@ -187,6 +195,7 @@ function createFormGroup(labelText, name, type) {
 }
 
 function renderAppShell(container, user) {
+  container.innerHTML = '';
   container.className = 'app-layout';
   
   const sidebarEl = document.createElement('div');

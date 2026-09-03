@@ -3,6 +3,7 @@ import { showToast } from '../components/toast.js';
 import { renderTable } from '../components/table.js';
 import { renderEmptyState } from '../components/emptyState.js';
 import { navigateTo } from '../router.js';
+import { filterComplaints } from '../utils/complaintsFilter.js';
 
 export async function render(container) {
   container.innerHTML = '';
@@ -107,6 +108,8 @@ export async function render(container) {
     return;
   }
 
+  const activeComplaints = filterComplaints(complaints || [], 'active');
+
   renderTable(tableContainer, {
     columns: [
       { key: 'student', label: 'Student', render: (val, row) => row.student?.full_name || 'N/A' },
@@ -120,7 +123,7 @@ export async function render(container) {
       }},
       { key: 'created_at', label: 'Reported', render: (val) => new Date(val).toLocaleDateString() }
     ],
-    rows: complaints || [],
-    emptyMessage: 'No complaints logged'
+    rows: activeComplaints,
+    emptyMessage: 'No active complaints logged'
   });
 }

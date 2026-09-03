@@ -16,6 +16,14 @@ CREATE TABLE public.hostels (
     created_at timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TABLE public.hostel_wardens (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    hostel_id uuid NOT NULL REFERENCES public.hostels(id) ON DELETE CASCADE,
+    warden_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (hostel_id, warden_id)
+);
+
 CREATE TABLE public.rooms (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     hostel_id uuid NOT NULL REFERENCES public.hostels(id) ON DELETE CASCADE,

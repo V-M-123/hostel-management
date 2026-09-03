@@ -25,7 +25,10 @@ SET search_path = public
 STABLE
 AS $$
 BEGIN
-    RETURN QUERY SELECT id FROM public.hostels WHERE warden_id = auth.uid();
+    RETURN QUERY 
+    SELECT id FROM public.hostels WHERE warden_id = auth.uid()
+    UNION
+    SELECT hostel_id FROM public.hostel_wardens WHERE warden_id = auth.uid();
 END;
 $$;
 
@@ -40,8 +43,7 @@ BEGIN
     RETURN QUERY
     SELECT r.id
     FROM public.rooms r
-    JOIN public.hostels h ON r.hostel_id = h.id
-    WHERE h.warden_id = auth.uid();
+    WHERE r.hostel_id IN (SELECT public.get_my_hostel_ids());
 END;
 $$;
 
@@ -57,8 +59,7 @@ BEGIN
     SELECT ra.student_id
     FROM public.room_allocations ra
     JOIN public.rooms r ON ra.room_id = r.id
-    JOIN public.hostels h ON r.hostel_id = h.id
-    WHERE h.warden_id = auth.uid() AND ra.status = 'active';
+    WHERE r.hostel_id IN (SELECT public.get_my_hostel_ids()) AND ra.status = 'active';
 END;
 $$;
 
@@ -254,7 +255,8 @@ WITH CHECK (student_id = auth.uid());
 
 CREATE POLICY "complaints_update" ON public.complaints FOR UPDATE
 USING (
-    public.get_my_role() = 'warden' AND room_id IN (SELECT public.get_warden_room_ids())
+    public.get_my_role() = 'admin' OR 
+    (public.get_my_role() = 'warden' AND room_id IN (SELECT public.get_warden_room_ids()))
 );
 
 -- fee_payments

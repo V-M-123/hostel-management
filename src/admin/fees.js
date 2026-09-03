@@ -32,10 +32,11 @@ export async function render(container) {
   statusGroup.innerHTML = `
     <label class="form-label" style="display:inline-block; margin-right: 10px;">Status</label>
     <select id="statusFilter" class="form-select" style="display:inline-block; width:auto;">
-      <option value="all">All</option>
+      <option value="unpaid" selected>Outstanding Only (Due & Overdue)</option>
       <option value="due">Due</option>
-      <option value="paid">Paid</option>
       <option value="overdue">Overdue</option>
+      <option value="paid">Paid Records</option>
+      <option value="all">All</option>
     </select>
   `;
   filterBar.appendChild(statusGroup);
@@ -52,7 +53,10 @@ export async function render(container) {
       .from('fee_payments')
       .select('*, student:student_id(full_name), recorder:recorded_by(full_name)');
       
-    if (statusFilter !== 'all') {
+    if (statusFilter === 'unpaid') {
+      // Don't show paid fees by default
+      query = query.neq('status', 'paid');
+    } else if (statusFilter !== 'all') {
       query = query.eq('status', statusFilter);
     }
 
@@ -63,13 +67,13 @@ export async function render(container) {
     renderTable(tableContainer, {
       columns: [
         { key: 'student', label: 'Student', render: (val, row) => row.student?.full_name || 'Unknown' },
-        { key: 'amount', label: 'Amount', render: (val, row) => `$${row.amount}` },
+        { key: 'amount', label: 'Amount', render: (val, row) => `₹${Number(row.amount).toFixed(2)}` },
         { key: 'due_date', label: 'Due Date', render: (val, row) => new Date(row.due_date).toLocaleDateString() },
         { key: 'paid_date', label: 'Paid Date', render: (val, row) => row.paid_date ? new Date(row.paid_date).toLocaleDateString() : '-' },
         { key: 'status', label: 'Status', render: (val, row) => {
             const badge = document.createElement('span');
             badge.className = `status-badge status-${row.status}`;
-            badge.textContent = row.status;
+            badge.textContent = row.status.toUpperCase();
             return badge;
         }},
         { key: 'recorder', label: 'Recorded By', render: (val, row) => row.recorder?.full_name || 'System' }
@@ -81,12 +85,12 @@ export async function render(container) {
             if (confirm('Delete this fee record?')) {
               const { error } = await supabase.from('fee_payments').delete().eq('id', row.id);
               if (error) showToast(error.message, 'error');
-              else { showToast('Deleted successfully'); loadData(); }
+              else { showToast('Deleted successfully', 'success'); await loadData(); }
             }
           }
         }
       ],
-      emptyMessage: 'No fee records found.'
+      emptyMessage: 'No outstanding fee records found.'
     });
   };
 
@@ -106,8 +110,8 @@ export async function render(container) {
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Amount</label>
-        <input type="number" name="amount" class="form-input" min="0" step="0.01" required />
+        <label class="form-label">Amount (₹)</label>
+        <input type="number" step="0.01" name="amount" class="form-input" min="1" required />
       </div>
       <div class="form-group">
         <label class="form-label">Due Date</label>
@@ -138,11 +142,11 @@ export async function render(container) {
       
       if (error) {
         showToast(error.message, 'error');
-        return;
+      } else {
+        showToast('Fee recorded successfully', 'success');
+        closeModal();
+        await loadData();
       }
-      showToast('Fee recorded successfully');
-      closeModal();
-      loadData();
     });
   };
 
@@ -173,10 +177,10 @@ export async function render(container) {
       } else {
         showToast('Fee updated successfully', 'success');
         closeModal();
-        loadData();
+        await loadData();
       }
     });
   };
 
-  loadData();
+  await loadData();
 }

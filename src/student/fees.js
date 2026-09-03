@@ -16,26 +16,24 @@ export async function render(container) {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) { showToast('Authentication error', 'error'); return; }
 
-  let fees = [];
+  let allFees = [];
   try {
     const res = await supabase
       .from('fee_payments')
       .select('*')
       .eq('student_id', user.id)
       .order('due_date', { ascending: false });
-    fees = res.data || [];
+    allFees = res.data || [];
   } catch (e) {
     console.warn('Fees query error:', e);
   }
 
   let totalDue = 0, totalPaid = 0, totalOverdue = 0;
-  if (fees) {
-    fees.forEach(f => {
-      if (f.status === 'due') totalDue += Number(f.amount);
-      if (f.status === 'paid') totalPaid += Number(f.amount);
-      if (f.status === 'overdue') totalOverdue += Number(f.amount);
-    });
-  }
+  allFees.forEach(f => {
+    if (f.status === 'due') totalDue += Number(f.amount);
+    if (f.status === 'paid') totalPaid += Number(f.amount);
+    if (f.status === 'overdue') totalOverdue += Number(f.amount);
+  });
 
   const cardsGrid = document.createElement('div');
   cardsGrid.className = 'cards-grid';
@@ -56,28 +54,55 @@ export async function render(container) {
   };
 
   cardsGrid.append(
-    createCard('Total Paid', totalPaid, 'success'),
-    createCard('Total Due', totalDue, 'warning'),
-    createCard('Total Overdue', totalOverdue, 'danger')
+    createCard('Outstanding Due', totalDue, 'warning'),
+    createCard('Overdue Amount', totalOverdue, 'danger'),
+    createCard('Total Paid to Date', totalPaid, 'success')
   );
   container.appendChild(cardsGrid);
+
+  const filterBar = document.createElement('div');
+  filterBar.style.marginBottom = '16px';
+  filterBar.innerHTML = `
+    <select id="studentFeeFilter" class="form-select" style="width: auto; display: inline-block;">
+      <option value="unpaid" selected>Outstanding Dues Only</option>
+      <option value="due">Due Only</option>
+      <option value="overdue">Overdue Only</option>
+      <option value="paid">Paid Receipts</option>
+      <option value="all">All Fee Records</option>
+    </select>
+  `;
+  container.appendChild(filterBar);
 
   const tableContainer = document.createElement('div');
   container.appendChild(tableContainer);
 
-  renderTable(tableContainer, {
-    columns: [
-      { key: 'amount', label: 'Amount', render: (val) => `₹${Number(val).toFixed(2)}` },
-      { key: 'due_date', label: 'Due Date', render: (val) => val ? new Date(val).toLocaleDateString() : '-' },
-      { key: 'paid_date', label: 'Paid Date', render: (val) => val ? new Date(val).toLocaleDateString() : '-' },
-      { key: 'status', label: 'Status', render: (val) => {
-          const span = document.createElement('span');
-          span.className = `status-badge status-${val}`;
-          span.textContent = val.toUpperCase();
-          return span;
-      }}
-    ],
-    rows: fees || [],
-    emptyMessage: 'No fee records found'
-  });
+  const renderFeeTable = () => {
+    tableContainer.innerHTML = '';
+    const filter = document.getElementById('studentFeeFilter').value;
+    
+    const filtered = allFees.filter(f => {
+      if (filter === 'unpaid') return f.status !== 'paid'; // Don't show paid fees
+      if (filter === 'all') return true;
+      return f.status === filter;
+    });
+
+    renderTable(tableContainer, {
+      columns: [
+        { key: 'amount', label: 'Amount', render: (val) => `₹${Number(val).toFixed(2)}` },
+        { key: 'due_date', label: 'Due Date', render: (val) => val ? new Date(val).toLocaleDateString() : '-' },
+        { key: 'paid_date', label: 'Paid Date', render: (val) => val ? new Date(val).toLocaleDateString() : '-' },
+        { key: 'status', label: 'Status', render: (val) => {
+            const span = document.createElement('span');
+            span.className = `status-badge status-${val}`;
+            span.textContent = val.toUpperCase();
+            return span;
+        }}
+      ],
+      rows: filtered || [],
+      emptyMessage: 'No outstanding fees pending.'
+    });
+  };
+
+  document.getElementById('studentFeeFilter').addEventListener('change', renderFeeTable);
+  renderFeeTable();
 }

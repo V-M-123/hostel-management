@@ -2,6 +2,7 @@ import { supabase } from '../supabaseClient.js';
 import { showToast } from '../components/toast.js';
 import { renderTable } from '../components/table.js';
 import { openModal, closeModal } from '../components/modal.js';
+import { filterComplaints } from '../utils/complaintsFilter.js';
 
 export async function render(container) {
   container.innerHTML = '';
@@ -21,6 +22,17 @@ export async function render(container) {
 
   header.append(title, actions);
   container.appendChild(header);
+
+  const filterBar = document.createElement('div');
+  filterBar.style.marginBottom = '20px';
+  filterBar.innerHTML = `
+    <select id="studentStatusFilter" class="form-select" style="width: auto; display: inline-block;">
+      <option value="active" selected>Active Issues (Unresolved)</option>
+      <option value="resolved">Resolved (< 10 days)</option>
+      <option value="all">All</option>
+    </select>
+  `;
+  container.appendChild(filterBar);
 
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) { showToast('Authentication error', 'error'); return; }
@@ -71,19 +83,19 @@ export async function render(container) {
       } else {
         showToast('Complaint filed successfully', 'success');
         closeModal();
-        render(container);
+        await render(container);
       }
     });
   });
 
-  let complaints = [];
+  let allComplaints = [];
   try {
     const res = await supabase
       .from('complaints')
       .select('*, room:room_id(room_number)')
       .eq('student_id', user.id)
       .order('created_at', { ascending: false });
-    complaints = res.data || [];
+    allComplaints = res.data || [];
   } catch (e) {
     console.warn('Complaints query error:', e);
   }
@@ -91,21 +103,30 @@ export async function render(container) {
   const tableContainer = document.createElement('div');
   container.appendChild(tableContainer);
 
-  renderTable(tableContainer, {
-    columns: [
-      { key: 'category', label: 'Category', render: (val) => val.charAt(0).toUpperCase() + val.slice(1) },
-      { key: 'description', label: 'Description', render: (val) => val.length > 80 ? val.substring(0, 80) + '...' : val },
-      { key: 'room', label: 'Room', render: (val) => val?.room_number || 'N/A' },
-      { key: 'status', label: 'Status', render: (val) => {
-          const span = document.createElement('span');
-          span.className = `status-badge status-${val}`;
-          span.textContent = val.replace('_', ' ').toUpperCase();
-          return span;
-      }},
-      { key: 'created_at', label: 'Filed On', render: (val) => new Date(val).toLocaleDateString() },
-      { key: 'resolved_at', label: 'Resolved On', render: (val) => val ? new Date(val).toLocaleDateString() : '-' },
-    ],
-    rows: complaints || [],
-    emptyMessage: 'No complaints filed yet'
-  });
+  const renderTableData = () => {
+    tableContainer.innerHTML = '';
+    const statusVal = document.getElementById('studentStatusFilter').value;
+    const filtered = filterComplaints(allComplaints, statusVal, 'all');
+
+    renderTable(tableContainer, {
+      columns: [
+        { key: 'category', label: 'Category', render: (val) => val.charAt(0).toUpperCase() + val.slice(1) },
+        { key: 'description', label: 'Description', render: (val) => val.length > 80 ? val.substring(0, 80) + '...' : val },
+        { key: 'room', label: 'Room', render: (val) => val?.room_number || 'N/A' },
+        { key: 'status', label: 'Status', render: (val) => {
+            const span = document.createElement('span');
+            span.className = `status-badge status-${val}`;
+            span.textContent = val.replace('_', ' ').toUpperCase();
+            return span;
+        }},
+        { key: 'created_at', label: 'Filed On', render: (val) => new Date(val).toLocaleDateString() },
+        { key: 'resolved_at', label: 'Resolved On', render: (val) => val ? new Date(val).toLocaleDateString() : '-' },
+      ],
+      rows: filtered || [],
+      emptyMessage: 'No active complaints filed'
+    });
+  };
+
+  document.getElementById('studentStatusFilter').addEventListener('change', renderTableData);
+  renderTableData();
 }

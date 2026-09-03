@@ -30,12 +30,19 @@ export async function render(container) {
     tableContainer.innerHTML = '';
     const { data: wardens, error: wError } = await supabase.from('profiles').select('*').eq('role', 'warden');
     const { data: hostels, error: hError } = await supabase.from('hostels').select('id, name, warden_id');
+    const { data: hwLinks } = await supabase.from('hostel_wardens').select('hostel_id, warden_id');
 
     if (wError) { showToast(wError.message, 'error'); return; }
     if (hError) { showToast(hError.message, 'error'); return; }
 
-    const rows = wardens.map(w => {
-      const assignedHostel = hostels.find(h => h.warden_id === w.id);
+    const rows = (wardens || []).map(w => {
+      let assignedHostel = (hostels || []).find(h => h.warden_id === w.id);
+      if (!assignedHostel && hwLinks) {
+        const link = hwLinks.find(l => l.warden_id === w.id);
+        if (link) {
+          assignedHostel = (hostels || []).find(h => h.id === link.hostel_id);
+        }
+      }
       return {
         ...w,
         assignedHostelName: assignedHostel ? assignedHostel.name : 'None',

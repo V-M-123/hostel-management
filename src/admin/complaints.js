@@ -3,6 +3,7 @@ import { showToast } from '../components/toast.js';
 import { renderTable } from '../components/table.js';
 import { renderEmptyState } from '../components/emptyState.js';
 import { openModal, closeModal } from '../components/modal.js';
+import { filterComplaints } from '../utils/complaintsFilter.js';
 
 export async function render(container) {
   container.innerHTML = '';
@@ -12,7 +13,7 @@ export async function render(container) {
   header.innerHTML = `
     <div>
       <h1 class="page-title">Complaint Logs</h1>
-      <p style="color: var(--text-secondary); font-size: 14px;">Campus-wide grievance tracking and maintenance oversight</p>
+      <p style="color: var(--text-secondary); font-size: 14px;">Active campus issues (resolved issues auto-expire after 10 days)</p>
     </div>
   `;
 
@@ -34,12 +35,13 @@ export async function render(container) {
 
   const statusFilter = document.createElement('select');
   statusFilter.className = 'form-select';
-  statusFilter.style.width = '160px';
+  statusFilter.style.width = '180px';
   statusFilter.innerHTML = `
-    <option value="all">All Statuses</option>
+    <option value="active" selected>Active Issues (Unresolved)</option>
     <option value="open">Open</option>
     <option value="in_progress">In Progress</option>
-    <option value="resolved">Resolved</option>
+    <option value="resolved">Resolved (< 10 days)</option>
+    <option value="all">All History</option>
   `;
 
   filterContainer.append(categoryFilter, statusFilter);
@@ -58,7 +60,7 @@ export async function render(container) {
       .from('complaints')
       .select(`
         *,
-        student:student_id(full_name, phone),
+        student:student_id(full_name),
         room:room_id(
           room_number,
           floor,
@@ -81,16 +83,12 @@ export async function render(container) {
     const cat = categoryFilter.value;
     const stat = statusFilter.value;
 
-    const filtered = allComplaints.filter(c => {
-      const matchCat = cat === 'all' || c.category === cat;
-      const matchStat = stat === 'all' || c.status === stat;
-      return matchCat && matchStat;
-    });
+    const filtered = filterComplaints(allComplaints, stat, cat);
 
     tableContainer.innerHTML = '';
 
     if (filtered.length === 0) {
-      renderEmptyState(tableContainer, 'No complaints match the selected filter criteria.', '📋');
+      renderEmptyState(tableContainer, 'No active complaints matching criteria.', '📋');
       return;
     }
 
@@ -103,7 +101,8 @@ export async function render(container) {
             return span;
         }},
         { key: 'description', label: 'Description', render: (val) => val },
-        { key: 'student', label: 'Student', render: (val, row) => `${row.student?.full_name || 'Anonymous'} (${row.student?.phone || 'No phone'})` },
+        { key: 'student', label: 'Student', render: (val, row) => `${row.student?.full_name || 'Anonymous'}`},
+        //(${row.student?.phone || 'No phone'})` },
         { key: 'location', label: 'Location', render: (val, row) => `${row.room?.hostel?.name || 'Block'} — Room ${row.room?.room_number || '-'}` },
         { key: 'status', label: 'Status', render: (val) => {
             const span = document.createElement('span');
@@ -121,7 +120,7 @@ export async function render(container) {
           onClick: (row) => openUpdateModal(row)
         }
       ],
-      emptyMessage: 'No complaints logged'
+      emptyMessage: 'No active complaints logged'
     });
   };
 
@@ -142,15 +141,23 @@ export async function render(container) {
 
     openModal('Update Complaint Status', bodyHTML, async (formData) => {
       const newStatus = formData.get('status');
+      
+      // Timer resets if changed from resolved to open or in_progress (resolved_at = null)
+      const updateData = {
+        status: newStatus,
+        resolved_at: newStatus === 'resolved' ? new Date().toISOString() : null
+      };
+
       const { error } = await supabase
         .from('complaints')
-        .update({ status: newStatus })
+        .update(updateData)
         .eq('id', complaint.id);
 
       if (error) {
         showToast(error.message, 'error');
       } else {
-        showToast('Complaint status updated successfully!', 'success');
+        const resetMsg = newStatus === 'resolved' ? 'Marked resolved (will auto-expire in 10 days)' : 'Status updated (timer reset)';
+        showToast(resetMsg, 'success');
         closeModal();
         await loadData();
       }
