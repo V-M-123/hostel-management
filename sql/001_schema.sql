@@ -148,3 +148,35 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER before_complaint_update
     BEFORE UPDATE ON public.complaints
     FOR EACH ROW EXECUTE FUNCTION public.set_resolved_timestamp();
+
+-- 4. handle_fee_paid_date
+CREATE OR REPLACE FUNCTION public.handle_fee_paid_date()
+RETURNS trigger AS $$
+BEGIN
+    IF NEW.status = 'paid' AND NEW.paid_date IS NULL THEN
+        NEW.paid_date := CURRENT_DATE;
+    ELSIF NEW.status IN ('due', 'overdue') THEN
+        NEW.paid_date := NULL;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER before_fee_payment_insert_update
+    BEFORE INSERT OR UPDATE ON public.fee_payments
+    FOR EACH ROW EXECUTE FUNCTION public.handle_fee_paid_date();
+
+-- 5. prevent_self_role_escalation
+CREATE OR REPLACE FUNCTION public.prevent_self_role_escalation()
+RETURNS trigger AS $$
+BEGIN
+    IF NEW.role <> OLD.role AND public.get_my_role() <> 'admin' THEN
+        NEW.role := OLD.role;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER trg_prevent_role_escalation
+    BEFORE UPDATE ON public.profiles
+    FOR EACH ROW EXECUTE FUNCTION public.prevent_self_role_escalation();

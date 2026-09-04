@@ -25,7 +25,7 @@ export async function render(container) {
   // 1. System Overview Section
   const overviewSection = document.createElement('div');
   overviewSection.className = 'dashboard-section';
-  overviewSection.innerHTML = `<div class="section-title">📊 System Overview</div>`;
+  overviewSection.innerHTML = `<div class="section-title">  System Overview</div>`;
 
   const { data: stats, error: statsError } = await supabase.rpc('get_dashboard_stats');
   if (statsError) {
@@ -71,7 +71,7 @@ export async function render(container) {
   // 2. Management Shortcuts
   const shortcutsSection = document.createElement('div');
   shortcutsSection.className = 'dashboard-section';
-  shortcutsSection.innerHTML = `<div class="section-title">Management Shortcuts</div>`;
+  shortcutsSection.innerHTML = `<div class="section-title">  Management Shortcuts</div>`;
 
   const quickActions = document.createElement('div');
   quickActions.className = 'quick-actions';
@@ -111,7 +111,7 @@ export async function render(container) {
   // 3. Operational Overview (Recent Complaints)
   const operationalSection = document.createElement('div');
   operationalSection.className = 'dashboard-section';
-  operationalSection.innerHTML = `<div class="section-title">🚩 Operational Overview: Recent Complaints</div>`;
+  operationalSection.innerHTML = `<div class="section-title"> Operational Overview: Recent Complaints</div>`;
 
   const tableContainer = document.createElement('div');
   operationalSection.appendChild(tableContainer);

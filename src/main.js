@@ -4,10 +4,8 @@ import { initRouter, navigateTo } from './router.js';
 import { renderTopbar } from './components/topbar.js';
 import { renderSidebar } from './components/sidebar.js';
 import { showToast } from './components/toast.js';
-import { initTheme, createThemeToggle } from './components/themeToggle.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-  initTheme();
   onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
       initApp();
@@ -41,9 +39,6 @@ function renderAuthPage(container) {
 
   function renderForm() {
     container.innerHTML = '';
-    
-    const themeToggle = createThemeToggle({ className: 'auth-theme-toggle' });
-    container.appendChild(themeToggle);
 
     const card = document.createElement('div');
     card.className = 'glass-panel auth-card';

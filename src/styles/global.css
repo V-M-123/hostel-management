@@ -4,9 +4,9 @@
   --color-destructive-foreground: var(--destructive-foreground);
 }
 
-:root, [data-theme="dark"] {
+:root {
   /* ==========================================================================
-     HIGGSFIELD AI DESIGN SYSTEM (DARK MODE - DEFAULT)
+     HIGGSFIELD AI PERMANENT OBSIDIAN DARK THEME
      ========================================================================== */
 
   /* Tailwind / Component Semantic Tokens */
@@ -98,75 +98,6 @@
   --shadow: var(--shadow-card);
 
   --transition: 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-[data-theme="light"] {
-  --background: #f8f9fa;
-  --foreground: #09090b;
-  --card: #ffffff;
-  --card-foreground: #09090b;
-  --popover: #ffffff;
-  --popover-foreground: #09090b;
-  
-  --primary: #8ab600;
-  --primary-foreground: #ffffff;
-  
-  --secondary: #00ab55;
-  --secondary-foreground: #ffffff;
-  
-  --accent: #f1f5f9;
-  --accent-foreground: #09090b;
-  
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #8ab600;
-
-  --color-void: #f8f9fa;
-  --color-carbon: #ffffff;
-  --color-obsidian: #f1f5f9;
-  --color-graphite: #e2e8f0;
-  --color-smoke: #cbd5e1;
-  --color-ash: #94a3b8;
-  --color-fog: #64748b;
-  --color-mist: #334155;
-  --color-bone: #1e293b;
-  --color-paper: #09090b;
-
-  --bg-primary: var(--color-void);
-  --bg-secondary: var(--color-carbon);
-  --bg-tertiary: var(--color-obsidian);
-  --bg-glass: rgba(255, 255, 255, 0.92);
-  --bg-glass-hover: rgba(241, 245, 249, 0.9);
-  --border-glass: #e2e8f0;
-  --border-glass-strong: #cbd5e1;
-
-  --text-primary: var(--color-paper);
-  --text-secondary: var(--color-mist);
-  --text-muted: var(--color-fog);
-
-  --accent-hover: #759c00;
-  --accent-text: #ffffff;
-  --accent-glow: rgba(138, 182, 0, 0.25);
-
-  --input-bg: #ffffff;
-  --input-border: #e2e8f0;
-  --input-focus-bg: #ffffff;
-  --icon-box-bg: rgba(138, 182, 0, 0.08);
-  --modal-overlay-bg: rgba(0, 0, 0, 0.5);
-  --auth-vignette: radial-gradient(circle at 50% 30%, rgba(138, 182, 0, 0.05) 0%, transparent 70%);
-
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-subtle: inset 0 0 0 1px var(--color-graphite);
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow-elevated: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  --shadow: var(--shadow-card);
 }
 
 * {

@@ -97,9 +97,11 @@ BEGIN
         RAISE EXCEPTION 'Unauthorized';
     END IF;
 
-    SELECT array_agg(id) INTO v_hostel_ids FROM public.hostels WHERE warden_id = auth.uid();
+    SELECT array_agg(id) INTO v_hostel_ids FROM (
+        SELECT public.get_my_hostel_ids() AS id
+    ) sub;
     
-    IF v_hostel_ids IS NULL THEN
+    IF v_hostel_ids IS NULL OR array_length(v_hostel_ids, 1) = 0 THEN
         RETURN json_build_object(
             'total_rooms', 0,
             'occupied_rooms', 0,
@@ -134,7 +136,13 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.create_fee_record(p_student_id uuid, p_amount numeric, p_due_date date, p_status text DEFAULT 'due')
+CREATE OR REPLACE FUNCTION public.create_fee_record(
+    p_student_id uuid, 
+    p_amount numeric, 
+    p_due_date date, 
+    p_status text DEFAULT 'due',
+    p_paid_date date DEFAULT NULL
+)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -152,8 +160,9 @@ BEGIN
         SELECT EXISTS (
             SELECT 1 FROM public.room_allocations ra
             JOIN public.rooms r ON ra.room_id = r.id
-            JOIN public.hostels h ON r.hostel_id = h.id
-            WHERE ra.student_id = p_student_id AND ra.status = 'active' AND h.warden_id = auth.uid()
+            WHERE ra.student_id = p_student_id 
+              AND ra.status = 'active' 
+              AND r.hostel_id IN (SELECT public.get_my_hostel_ids())
         ) INTO v_is_valid;
         
         IF NOT v_is_valid THEN
@@ -161,8 +170,15 @@ BEGIN
         END IF;
     END IF;
     
-    INSERT INTO public.fee_payments (student_id, amount, due_date, status, recorded_by)
-    VALUES (p_student_id, p_amount, p_due_date, p_status, auth.uid());
+    INSERT INTO public.fee_payments (student_id, amount, due_date, status, paid_date, recorded_by)
+    VALUES (
+        p_student_id, 
+        p_amount, 
+        p_due_date, 
+        p_status, 
+        CASE WHEN p_status = 'paid' THEN COALESCE(p_paid_date, CURRENT_DATE) ELSE NULL END, 
+        auth.uid()
+    );
 END;
 $$;
 
@@ -231,3 +247,63 @@ BEGIN
       AND ra.student_id <> auth.uid();
 END;
 $$;
+
+-- RPC Function for capacity-aware random allocation
+CREATE OR REPLACE FUNCTION public.random_allocate_students(
+    p_hostel_id uuid DEFAULT NULL,
+    p_max_count int DEFAULT NULL
+)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    v_allocated_count int := 0;
+    v_student_rec RECORD;
+    v_room_id uuid;
+    v_cursor CURSOR FOR
+        SELECT id FROM public.profiles
+        WHERE role = 'student'
+          AND id NOT IN (
+              SELECT student_id FROM public.room_allocations WHERE status = 'active'
+          )
+        ORDER BY random();
+BEGIN
+    IF public.get_my_role() NOT IN ('admin', 'warden') THEN
+        RAISE EXCEPTION 'Unauthorized';
+    END IF;
+
+    IF public.get_my_role() = 'warden' THEN
+        IF p_hostel_id IS NOT NULL AND p_hostel_id NOT IN (SELECT public.get_my_hostel_ids()) THEN
+            RAISE EXCEPTION 'Unauthorized for this hostel block';
+        END IF;
+    END IF;
+
+    FOR v_student_rec IN v_cursor LOOP
+        IF p_max_count IS NOT NULL AND v_allocated_count >= p_max_count THEN
+            EXIT;
+        END IF;
+
+        -- Find a random room with available capacity (capacity > occupied_count)
+        SELECT r.id INTO v_room_id
+        FROM public.rooms r
+        WHERE (p_hostel_id IS NULL OR r.hostel_id = p_hostel_id)
+          AND (public.get_my_role() = 'admin' OR r.hostel_id IN (SELECT public.get_my_hostel_ids()))
+          AND r.capacity > (
+              SELECT COUNT(*) FROM public.room_allocations ra WHERE ra.room_id = r.id AND ra.status = 'active'
+          )
+        ORDER BY random()
+        LIMIT 1;
+
+        IF v_room_id IS NOT NULL THEN
+            INSERT INTO public.room_allocations (room_id, student_id, allocated_date, status)
+            VALUES (v_room_id, v_student_rec.id, CURRENT_DATE, 'active');
+            v_allocated_count := v_allocated_count + 1;
+        END IF;
+    END LOOP;
+
+    RETURN json_build_object('allocated_count', v_allocated_count);
+END;
+$$;
+

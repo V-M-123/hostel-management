@@ -6,14 +6,14 @@ CREATE OR REPLACE FUNCTION public.get_my_role()
 RETURNS text
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 STABLE
 AS $$
 DECLARE
-    v_role text;
+  v_role text;
 BEGIN
-    SELECT role INTO v_role FROM public.profiles WHERE id = auth.uid();
-    RETURN v_role;
+  SELECT role INTO v_role FROM public.profiles WHERE id = auth.uid();
+  RETURN COALESCE(v_role, 'student');
 END;
 $$;
 
@@ -164,10 +164,12 @@ WITH CHECK (id = auth.uid());
 
 CREATE POLICY "profiles_update" ON public.profiles FOR UPDATE
 USING (
-    public.get_my_role() = 'admin' OR id = auth.uid()
+    id = auth.uid() OR 
+    public.get_my_role() = 'admin'
 )
 WITH CHECK (
-    public.get_my_role() = 'admin' OR (id = auth.uid() AND role = (SELECT role FROM public.profiles WHERE id = auth.uid()))
+    id = auth.uid() OR 
+    public.get_my_role() = 'admin'
 );
 
 CREATE POLICY "profiles_delete" ON public.profiles FOR DELETE

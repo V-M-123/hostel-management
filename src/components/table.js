@@ -39,6 +39,8 @@ export function renderTable(container, options) {
         const result = col.render(row[col.key], row);
         if (result instanceof HTMLElement) {
           td.appendChild(result);
+        } else if (typeof result === 'string' && /<[a-z][\s\S]*>/i.test(result)) {
+          td.innerHTML = result;
         } else {
           td.textContent = result !== undefined && result !== null ? result : '';
         }
@@ -52,6 +54,12 @@ export function renderTable(container, options) {
       const tdActions = document.createElement('td');
       tdActions.style.whiteSpace = 'nowrap';
       actions.forEach(action => {
+        if (typeof action.show === 'function' && !action.show(row)) {
+          return;
+        }
+        if (typeof action.condition === 'function' && !action.condition(row)) {
+          return;
+        }
         const btn = document.createElement('button');
         btn.className = `btn btn-sm ${action.class || 'btn-secondary'}`;
         btn.style.marginRight = '8px';

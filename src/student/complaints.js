@@ -24,7 +24,7 @@ export async function render(container) {
   container.appendChild(header);
 
   const filterBar = document.createElement('div');
-  filterBar.style.marginBottom = '20px';
+  filterBar.style.marginBottom = '10px';
   filterBar.innerHTML = `
     <select id="studentStatusFilter" class="form-select" style="width: auto; display: inline-block;">
       <option value="active" selected>Active Issues (Unresolved)</option>

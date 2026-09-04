@@ -1,5 +1,4 @@
 import { signOut } from '../auth.js';
-import { createThemeToggle } from './themeToggle.js';
 import { createIcon } from '../utils/icons.js';
 
 export function renderTopbar(container, user) {
@@ -21,8 +20,6 @@ export function renderTopbar(container, user) {
   const userSec = document.createElement('div');
   userSec.className = 'topbar-user';
 
-  const themeToggle = createThemeToggle();
-  
   const name = document.createElement('span');
   name.className = 'topbar-user-name';
   name.textContent = user.full_name || user.email || 'User';
@@ -44,7 +41,6 @@ export function renderTopbar(container, user) {
     window.location.reload();
   };
 
-  userSec.appendChild(themeToggle);
   userSec.appendChild(name);
   userSec.appendChild(badge);
   userSec.appendChild(logoutBtn);

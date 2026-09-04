@@ -25,7 +25,11 @@ import {
   Activity,
   Percent,
   TrendingUp,
-  Inbox
+  Inbox,
+  Shuffle,
+  Zap,
+  Sparkles,
+  Dices
 } from 'lucide';
 
 const iconMap = {
@@ -63,7 +67,11 @@ const iconMap = {
   activity: Activity,
   percent: Percent,
   trending: TrendingUp,
-  inbox: Inbox
+  inbox: Inbox,
+  shuffle: Shuffle,
+  zap: Zap,
+  sparkles: Sparkles,
+  dice: Dices
 };
 
 /**

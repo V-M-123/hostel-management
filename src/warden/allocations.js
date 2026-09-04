@@ -2,14 +2,28 @@ import { supabase } from '../supabaseClient.js';
 import { showToast } from '../components/toast.js';
 import { renderTable } from '../components/table.js';
 import { openModal, closeModal } from '../components/modal.js';
+import { createIcon } from '../utils/icons.js';
 
 export async function render(container) {
   container.innerHTML = '';
   
   const { data: { user } } = await supabase.auth.getUser();
-  const { data: hostel, error: hError } = await supabase.from('hostels').select('id').eq('warden_id', user.id).single();
 
-  if (hError || !hostel) {
+  // Find all hostels assigned to this warden (from hostels and hostel_wardens)
+  const [{ data: directHostels }, { data: junctionHostels }] = await Promise.all([
+    supabase.from('hostels').select('id, name').eq('warden_id', user.id),
+    supabase.from('hostel_wardens').select('hostel:hostel_id(id, name)').eq('warden_id', user.id)
+  ]);
+
+  const assignedHostelMap = new Map();
+  directHostels?.forEach(h => assignedHostelMap.set(h.id, h));
+  junctionHostels?.forEach(jh => {
+    if (jh.hostel) assignedHostelMap.set(jh.hostel.id, jh.hostel);
+  });
+
+  const assignedHostels = Array.from(assignedHostelMap.values());
+
+  if (assignedHostels.length === 0) {
     const msg = document.createElement('div');
     msg.className = 'empty-state';
     msg.innerHTML = `
@@ -20,21 +34,41 @@ export async function render(container) {
     return;
   }
 
-  const hostelId = hostel.id;
+  const hostelIds = assignedHostels.map(h => h.id);
+  const primaryHostel = assignedHostels[0];
 
   const header = document.createElement('div');
   header.className = 'page-header';
-  const title = document.createElement('h1');
-  title.className = 'page-title';
-  title.textContent = 'Room Allocations';
-  header.appendChild(title);
+  header.style.display = 'flex';
+  header.style.justifyContent = 'space-between';
+  header.style.alignItems = 'flex-start';
+  header.style.flexWrap = 'wrap';
+  header.style.gap = '16px';
+
+  header.innerHTML = `
+    <div>
+      <h1 class="page-title">Room Allocations</h1>
+      <p style="color: var(--text-secondary); font-size: 14px;">Managing ${assignedHostels.map(h => h.name).join(', ')}</p>
+    </div>
+  `;
 
   const actions = document.createElement('div');
   actions.className = 'page-actions';
+  actions.style.display = 'flex';
+  actions.style.gap = '10px';
+  actions.style.alignItems = 'center';
+
+  const randomBtn = document.createElement('button');
+  randomBtn.className = 'btn btn-secondary';
+  randomBtn.textContent = 'Auto-Allocate (Random)';
+  randomBtn.onclick = () => openWardenRandomAllocationModal();
+
   const newBtn = document.createElement('button');
   newBtn.className = 'btn btn-primary';
-  newBtn.textContent = '+ Allocate Student';
+  newBtn.textContent = 'Allocate Student';
   newBtn.onclick = () => openAllocationModal();
+
+  actions.appendChild(randomBtn);
   actions.appendChild(newBtn);
   header.appendChild(actions);
   container.appendChild(header);
@@ -46,8 +80,8 @@ export async function render(container) {
     tableContainer.innerHTML = '';
     const { data, error } = await supabase
       .from('room_allocations')
-      .select('*, student:student_id(full_name, phone), room:room_id!inner(room_number, floor, hostel_id)')
-      .eq('room.hostel_id', hostelId)
+      .select('*, student:student_id(full_name, phone), room:room_id!inner(id, room_number, floor, capacity, occupied_count, hostel_id, hostel:hostel_id(name))')
+      .in('room.hostel_id', hostelIds)
       .order('allocated_date', { ascending: false });
 
     if (error) { showToast(error.message, 'error'); return; }
@@ -56,8 +90,8 @@ export async function render(container) {
       columns: [
         { key: 'student', label: 'Student', render: (val, row) => row.student?.full_name || 'Unknown' },
         { key: 'phone', label: 'Phone', render: (val, row) => row.student?.phone || 'N/A' },
-        { key: 'room', label: 'Room', render: (val, row) => row.room?.room_number || 'N/A' },
-        { key: 'floor', label: 'Floor', render: (val, row) => row.room?.floor?.toString() || 'N/A' },
+        { key: 'hostel', label: 'Hostel Block', render: (val, row) => row.room?.hostel?.name || 'Block' },
+        { key: 'room', label: 'Room', render: (val, row) => `Room ${row.room?.room_number || 'N/A'} (Floor ${row.room?.floor})` },
         { key: 'allocated_date', label: 'Allocated Date', render: (val) => val ? new Date(val).toLocaleDateString() : 'N/A' },
         { key: 'status', label: 'Status', render: (val, row) => {
             const statusClass = row.status === 'active' ? 'status-active' : 'status-vacated';
@@ -98,14 +132,22 @@ export async function render(container) {
     });
   };
 
+  /**
+   * Manual Single Allocation Modal
+   */
   const openAllocationModal = async () => {
-    // 1. Get rooms in this hostel
-    const { data: rooms, error: rError } = await supabase.from('rooms').select('*').eq('hostel_id', hostelId);
+    // 1. Get rooms in assigned hostels
+    const { data: rooms, error: rError } = await supabase
+      .from('rooms')
+      .select('*, hostel:hostel_id(name)')
+      .in('hostel_id', hostelIds)
+      .order('room_number');
+
     if (rError) { showToast(rError.message, 'error'); return; }
     
     const availableRooms = rooms.filter(r => (r.occupied_count || 0) < r.capacity);
     if (availableRooms.length === 0) {
-      showToast('No rooms with available capacity', 'error');
+      showToast('No rooms with available capacity in your assigned blocks.', 'error');
       return;
     }
 
@@ -125,7 +167,7 @@ export async function render(container) {
       return;
     }
 
-    const roomOptions = availableRooms.map(r => `<option value="${r.id}">${r.room_number} (Left: ${r.capacity - (r.occupied_count || 0)})</option>`).join('');
+    const roomOptions = availableRooms.map(r => `<option value="${r.id}">${r.hostel?.name || 'Block'} - Room ${r.room_number} (Free: ${r.capacity - (r.occupied_count || 0)}/${r.capacity})</option>`).join('');
     const studentOptions = availableStudents.map(s => `<option value="${s.id}">${s.full_name}</option>`).join('');
 
     const bodyHTML = `
@@ -136,7 +178,7 @@ export async function render(container) {
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Room</label>
+        <label class="form-label">Room (Capacity-Filtered)</label>
         <select name="room_id" class="form-select" required>
           ${roomOptions}
         </select>
@@ -161,6 +203,111 @@ export async function render(container) {
         closeModal();
         await loadData();
       }
+    });
+  };
+
+  /**
+   * Warden Random Room Allocation (Capacity-Aware)
+   */
+  const openWardenRandomAllocationModal = async () => {
+    // 1. Fetch available rooms in assigned hostels
+    const { data: rooms, error: rError } = await supabase
+      .from('rooms')
+      .select('id, hostel_id, room_number, floor, capacity, occupied_count')
+      .in('hostel_id', hostelIds);
+
+    if (rError) { showToast(rError.message, 'error'); return; }
+
+    const availableRooms = rooms.filter(r => (r.capacity - (r.occupied_count || 0)) > 0);
+    const totalSlots = availableRooms.reduce((sum, r) => sum + (r.capacity - (r.occupied_count || 0)), 0);
+
+    if (totalSlots === 0) {
+      showToast('All rooms in your assigned hostel blocks are currently full.', 'info');
+      return;
+    }
+
+    // 2. Fetch unallocated students
+    const [{ data: students }, { data: activeAllocs }] = await Promise.all([
+      supabase.from('profiles').select('id, full_name').eq('role', 'student'),
+      supabase.from('room_allocations').select('student_id').eq('status', 'active')
+    ]);
+
+    const activeIds = new Set(activeAllocs?.map(a => a.student_id) || []);
+    const unallocated = (students || []).filter(s => !activeIds.has(s.id));
+
+    if (unallocated.length === 0) {
+      showToast('All students campus-wide are already allocated to rooms!', 'info');
+      return;
+    }
+
+    const bodyHTML = `
+      <div style="margin-bottom: 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); padding: 14px 16px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Unallocated Students</div>
+            <div style="font-size: 20px; font-weight: 700; color: var(--color-acid-yellow);">${unallocated.length}</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Your Block Free Beds</div>
+            <div style="font-size: 20px; font-weight: 700; color: var(--text-primary);">${totalSlots}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Number of Students to Allocate</label>
+        <input type="number" name="count" class="form-input" min="1" max="${Math.min(unallocated.length, totalSlots)}" value="${Math.min(unallocated.length, totalSlots)}" />
+        <small style="color: var(--text-muted); font-size: 12px; margin-top: 4px; display: block;">Slots available: ${totalSlots}.</small>
+      </div>
+    `;
+
+    openModal('Auto-Allocate to Your Block', bodyHTML, async (formData) => {
+      const count = parseInt(formData.get('count'), 10) || Math.min(unallocated.length, totalSlots);
+
+      // Build slot pool
+      const slotPool = [];
+      availableRooms.forEach(r => {
+        const free = r.capacity - (r.occupied_count || 0);
+        for (let i = 0; i < free; i++) {
+          slotPool.push(r.id);
+        }
+      });
+
+      // Fisher-Yates shuffle slotPool
+      for (let i = slotPool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [slotPool[i], slotPool[j]] = [slotPool[j], slotPool[i]];
+      }
+
+      // Fisher-Yates shuffle unallocated
+      const studentPool = [...unallocated];
+      for (let i = studentPool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [studentPool[i], studentPool[j]] = [studentPool[j], studentPool[i]];
+      }
+
+      const toAllocate = Math.min(count, slotPool.length, studentPool.length);
+      const records = [];
+      const today = new Date().toISOString().split('T')[0];
+
+      for (let i = 0; i < toAllocate; i++) {
+        records.push({
+          student_id: studentPool[i].id,
+          room_id: slotPool[i],
+          status: 'active',
+          allocated_date: today
+        });
+      }
+
+      const { error: insError } = await supabase.from('room_allocations').insert(records);
+      if (insError) {
+        showToast(insError.message, 'error');
+        return;
+      }
+
+      showToast(`Successfully allocated ${toAllocate} students based on room capacity!`, 'success');
+      closeModal();
+      await loadData();
     });
   };
 

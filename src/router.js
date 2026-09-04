@@ -1,4 +1,5 @@
 import { animatePageIn } from './utils/motionTransitions.js';
+import { renderNotFound } from './components/notFound.js';
 
 let isRouting = false;
 
@@ -26,15 +27,15 @@ export function initRouter(routeMap, container, getCurrentUserFn) {
 
       const role = user.role;
 
-      if (!path.startsWith(`#/${role}/`) && path !== '') {
+      // Empty hash defaults to role dashboard
+      if (path === '' || path === '#/' || path === '#') {
         navigateTo(`#/${role}/dashboard`);
         return;
       }
 
-      const matchedRoute = path === '' ? `#/${role}/dashboard` : path;
-      const loader = routeMap[matchedRoute];
+      const loader = routeMap[path];
 
-      if (loader) {
+      if (loader && path.startsWith(`#/${role}/`)) {
         try {
           const module = await loader();
           await module.render(container);
@@ -42,11 +43,12 @@ export function initRouter(routeMap, container, getCurrentUserFn) {
           // Trigger motion.dev smooth view transition
           animatePageIn(container);
         } catch (err) {
-          console.error('[Router] Failed to load route', err);
-          container.innerHTML = '<h2 style="color: var(--color-cyber-red); padding: 20px;">Error loading page</h2>';
+          console.error('[Router] Failed to load route module:', err);
+          renderNotFound(container, role, path);
         }
       } else {
-        navigateTo(`#/${role}/dashboard`);
+        // Render custom 404 page for unmatched or unauthorized routes
+        renderNotFound(container, role, path);
       }
     } finally {
       isRouting = false;

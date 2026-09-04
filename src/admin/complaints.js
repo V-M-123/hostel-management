@@ -19,12 +19,12 @@ export async function render(container) {
 
   const filterContainer = document.createElement('div');
   filterContainer.style.display = 'flex';
-  filterContainer.style.gap = '12px';
-  filterContainer.style.alignItems = 'center';
+  filterContainer.style.gap = '10px';
+  filterContainer.style.alignItems = 'left';
 
   const categoryFilter = document.createElement('select');
   categoryFilter.className = 'form-select';
-  categoryFilter.style.width = '160px';
+  categoryFilter.style.width = '145px';
   categoryFilter.innerHTML = `
     <option value="all">All Categories</option>
     <option value="maintenance">Maintenance</option>
@@ -35,7 +35,7 @@ export async function render(container) {
 
   const statusFilter = document.createElement('select');
   statusFilter.className = 'form-select';
-  statusFilter.style.width = '180px';
+  statusFilter.style.width = '220px';
   statusFilter.innerHTML = `
     <option value="active" selected>Active Issues (Unresolved)</option>
     <option value="open">Open</option>
