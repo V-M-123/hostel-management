@@ -6,219 +6,167 @@
 
 :root, [data-theme="dark"] {
   /* ==========================================================================
-     CYBER CYAN PALETTE (DARK MODE)
+     HIGGSFIELD AI DESIGN SYSTEM (DARK MODE - DEFAULT)
      ========================================================================== */
 
-  /* shadcn / Tailwind Semantic Mapping */
-  --background: #03070a;
-  --foreground: #f8fafc;
-  --card: #081015;
-  --card-foreground: #f8fafc;
-  --popover: #081015;
-  --popover-foreground: #f8fafc;
+  /* Tailwind / Component Semantic Tokens */
+  --background: #030304;
+  --foreground: #f4f4f5;
+  --card: #09090d;
+  --card-foreground: #f4f4f5;
+  --popover: #09090d;
+  --popover-foreground: #f4f4f5;
   
-  --primary: #00f0ff;
-  --primary-foreground: #02141a;
+  --primary: #d1fe17;
+  --primary-foreground: #000000;
   
-  --secondary: #2dd48f;
-  --secondary-foreground: #02141a;
+  --secondary: #00f080;
+  --secondary-foreground: #000000;
   
-  --accent: #162a32;
-  --accent-foreground: #00f0ff;
+  --accent: #15151e;
+  --accent-foreground: #d1fe17;
   
-  --muted: #1e2631;
-  --muted-foreground: #94a3b8;
+  --muted: #181822;
+  --muted-foreground: #a1a1aa;
   
-  --destructive: #b91c1c;
+  --destructive: #ff3b5c;
   --destructive-foreground: #ffffff;
   
-  --border: #162a33;
-  --input: #162a33;
-  --ring: #00f0ff;
-  --radius: 0.5rem;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: #d1fe17;
+  --radius: 0.625rem;
 
-  /* Cyber Cyan Core Palette */
-  --color-void: #03070a;
-  --color-carbon: #081015;
-  --color-obsidian: #0e1a22;
-  --color-graphite: #162a33;
-  --color-smoke: #213d4b;
-  --color-ash: #64748b;
-  --color-fog: #94a3b8;
-  --color-mist: #cbd5e1;
-  --color-bone: #e2e8f0;
-  --color-paper: #f8fafc;
+  /* Higgsfield Core Obsidian & Acid Palette */
+  --color-void: #030304;
+  --color-carbon: #09090d;
+  --color-obsidian: #101016;
+  --color-graphite: #181822;
+  --color-smoke: #272733;
+  --color-ash: #52525b;
+  --color-fog: #a1a1aa;
+  --color-mist: #d4d4d8;
+  --color-bone: #f4f4f5;
+  --color-paper: #ffffff;
 
-  --color-cyber-cyan: #00f0ff;
-  --color-cyber-green: #2dd48f;
-  --color-cyber-red: #b91c1c;
-  --color-cyber-amber: #f59e0b;
+  --color-acid-yellow: #d1fe17;
+  --color-cyber-green: #00f080;
+  --color-cyber-red: #ff3b5c;
+  --color-cyber-orange: #ff7700;
+  --color-cosmic-violet: #9945ff;
 
   /* Theme Mapping */
   --bg-primary: var(--color-void);
   --bg-secondary: var(--color-carbon);
   --bg-tertiary: var(--color-obsidian);
-  --bg-glass: var(--color-carbon);
-  --bg-glass-hover: var(--color-obsidian);
-  --border-glass: var(--color-graphite);
-  --border-glass-strong: var(--color-smoke);
+  --bg-glass: rgba(10, 10, 15, 0.75);
+  --bg-glass-hover: rgba(24, 24, 34, 0.85);
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --border-glass-strong: rgba(255, 255, 255, 0.15);
 
   --text-primary: var(--color-paper);
   --text-secondary: var(--color-mist);
   --text-muted: var(--color-fog);
 
-  --accent-hover: #00d4e2;
-  --accent-text: #02141a;
-  --accent-glow: rgba(0, 240, 255, 0.25);
+  --accent-hover: #bceb08;
+  --accent-text: #000000;
+  --accent-glow: rgba(209, 254, 23, 0.35);
 
-  --input-bg: rgba(8, 16, 21, 0.85);
-  --input-border: #162a33;
-  --input-focus-bg: rgba(14, 26, 34, 0.95);
-  --icon-box-bg: rgba(0, 240, 255, 0.06);
-  --modal-overlay-bg: rgba(3, 7, 10, 0.85);
-  --auth-vignette: radial-gradient(circle at 50% 30%, rgba(0, 240, 255, 0.08) 0%, transparent 70%);
+  --input-bg: rgba(14, 14, 20, 0.85);
+  --input-border: rgba(255, 255, 255, 0.09);
+  --input-focus-bg: rgba(20, 20, 28, 0.95);
+  --icon-box-bg: rgba(209, 254, 23, 0.08);
+  --modal-overlay-bg: rgba(3, 3, 4, 0.88);
+  --auth-vignette: radial-gradient(circle at 50% 25%, rgba(209, 254, 23, 0.07) 0%, transparent 65%);
 
   /* Status Colors */
   --success: var(--color-cyber-green);
-  --success-bg: rgba(45, 212, 143, 0.12);
-  --warning: var(--color-cyber-amber);
-  --warning-bg: rgba(245, 158, 11, 0.12);
+  --success-bg: rgba(0, 240, 128, 0.12);
+  --warning: var(--color-cyber-orange);
+  --warning-bg: rgba(255, 119, 0, 0.12);
   --danger: var(--color-cyber-red);
-  --danger-bg: rgba(185, 28, 28, 0.16);
-  --info: var(--color-cyber-cyan);
-  --info-bg: rgba(0, 240, 255, 0.12);
+  --danger-bg: rgba(255, 59, 92, 0.14);
+  --info: var(--color-acid-yellow);
+  --info-bg: rgba(209, 254, 23, 0.12);
 
   /* Shadows & Elevation */
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.5);
-  --shadow-subtle: inset 0 0 0 1px var(--color-graphite);
-  --shadow-card: 0 0 0 1px var(--color-graphite), 0 2px 8px rgba(0, 0, 0, 0.5);
-  --shadow-elevated: 0 0 0 1px var(--color-smoke), 0 8px 24px rgba(0, 0, 0, 0.7);
-  --shadow-lg: 0 0 0 1px var(--color-smoke), 0 16px 36px rgba(0, 0, 0, 0.9);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.6);
+  --shadow-subtle: inset 0 0 0 1px var(--border-glass);
+  --shadow-card: 0 0 0 1px var(--border-glass), 0 4px 16px rgba(0, 0, 0, 0.6);
+  --shadow-elevated: 0 0 0 1px var(--border-glass-strong), 0 12px 32px rgba(0, 0, 0, 0.8);
+  --shadow-lg: 0 0 0 1px var(--border-glass-strong), 0 20px 48px rgba(0, 0, 0, 0.95);
   --shadow: var(--shadow-card);
 
-  --transition: 0.15s ease-out;
+  --transition: 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 [data-theme="light"] {
-  /* ==========================================================================
-     CYBER CYAN PALETTE (LIGHT MODE)
-     ========================================================================== */
-
-  /* shadcn / Tailwind Semantic Mapping */
-  --background: #f0f9ff;
-  --foreground: #082f49;
+  --background: #f8f9fa;
+  --foreground: #09090b;
   --card: #ffffff;
-  --card-foreground: #082f49;
+  --card-foreground: #09090b;
   --popover: #ffffff;
-  --popover-foreground: #082f49;
+  --popover-foreground: #09090b;
   
-  --primary: #0284c7;
+  --primary: #8ab600;
   --primary-foreground: #ffffff;
   
-  --secondary: #10b981;
+  --secondary: #00ab55;
   --secondary-foreground: #ffffff;
   
-  --accent: #e0f2fe;
-  --accent-foreground: #0284c7;
+  --accent: #f1f5f9;
+  --accent-foreground: #09090b;
   
-  --muted: #f0f9ff;
-  --muted-foreground: #0369a1;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
   
-  --destructive: #dc2626;
+  --destructive: #ef4444;
   --destructive-foreground: #ffffff;
   
-  --border: #bae6fd;
-  --input: #bae6fd;
-  --ring: #0284c7;
-  --radius: 0.5rem;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #8ab600;
 
-  /* Core Palette */
-  --color-void: #f0f9ff;
+  --color-void: #f8f9fa;
   --color-carbon: #ffffff;
-  --color-obsidian: #e0f2fe;
-  --color-graphite: #bae6fd;
-  --color-smoke: #7dd3fc;
-  --color-ash: #64748b;
-  --color-fog: #0369a1;
-  --color-mist: #0c4a6e;
-  --color-bone: #082f49;
-  --color-paper: #082f49;
+  --color-obsidian: #f1f5f9;
+  --color-graphite: #e2e8f0;
+  --color-smoke: #cbd5e1;
+  --color-ash: #94a3b8;
+  --color-fog: #64748b;
+  --color-mist: #334155;
+  --color-bone: #1e293b;
+  --color-paper: #09090b;
 
-  /* Theme Mapping */
   --bg-primary: var(--color-void);
   --bg-secondary: var(--color-carbon);
   --bg-tertiary: var(--color-obsidian);
-  --bg-glass: var(--color-carbon);
-  --bg-glass-hover: var(--color-obsidian);
-  --border-glass: var(--color-graphite);
-  --border-glass-strong: var(--color-smoke);
+  --bg-glass: rgba(255, 255, 255, 0.92);
+  --bg-glass-hover: rgba(241, 245, 249, 0.9);
+  --border-glass: #e2e8f0;
+  --border-glass-strong: #cbd5e1;
 
   --text-primary: var(--color-paper);
   --text-secondary: var(--color-mist);
   --text-muted: var(--color-fog);
 
-  --accent-hover: #0369a1;
+  --accent-hover: #759c00;
   --accent-text: #ffffff;
-  --accent-glow: rgba(2, 132, 199, 0.18);
+  --accent-glow: rgba(138, 182, 0, 0.25);
 
   --input-bg: #ffffff;
-  --input-border: #bae6fd;
+  --input-border: #e2e8f0;
   --input-focus-bg: #ffffff;
-  --icon-box-bg: rgba(2, 132, 199, 0.08);
-  --modal-overlay-bg: rgba(8, 47, 73, 0.45);
-  --auth-vignette: radial-gradient(circle at 50% 30%, rgba(2, 132, 199, 0.08) 0%, transparent 70%);
+  --icon-box-bg: rgba(138, 182, 0, 0.08);
+  --modal-overlay-bg: rgba(0, 0, 0, 0.5);
+  --auth-vignette: radial-gradient(circle at 50% 30%, rgba(138, 182, 0, 0.05) 0%, transparent 70%);
 
-  /* Status Colors */
-  --success: #059669;
-  --success-bg: rgba(16, 185, 129, 0.12);
-  --warning: #d97706;
-  --warning-bg: rgba(217, 119, 6, 0.12);
-  --danger: #dc2626;
-  --danger-bg: rgba(220, 38, 38, 0.12);
-  --info: #0284c7;
-  --info-bg: rgba(2, 132, 199, 0.12);
-
-  /* Shadows & Elevation */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-subtle: inset 0 0 0 1px var(--color-graphite);
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 0 1px var(--color-graphite);
-  --shadow-elevated: 0 10px 25px -5px rgba(2, 132, 199, 0.08), 0 0 0 1px var(--color-graphite);
-  --shadow-lg: 0 20px 35px -10px rgba(2, 132, 199, 0.12), 0 0 0 1px var(--color-graphite);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-elevated: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --shadow: var(--shadow-card);
-}
-
-:root {
-  color-scheme: dark;
-
-  /* Typography */
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'IBM Plex Mono', 'Berkeley Mono', monospace;
-
-  /* Typography Scale */
-  --text-caption: 13px;
-  --text-body-sm: 14px;
-  --text-body: 15px;
-  --text-subheading: 20px;
-  --text-heading-sm: 24px;
-  --text-heading: 32px;
-  --text-heading-lg: 48px;
-  --text-display: 64px;
-
-  /* Border Radius */
-  --radius-sm: 2px;
-  --radius: 12px;
-  --radius-lg: 12px;
-  --radius-cards: 12px;
-  --radius-buttons: 6px;
-  --radius-inputs: 6px;
-  --radius-badges: 4px;
-  --radius-pills: 9999px;
-  --radius-nav: 6px;
-}
-
-[data-theme="light"] {
-  color-scheme: light;
 }
 
 * {
@@ -228,39 +176,62 @@
 }
 
 body {
-  font-family: var(--font-family);
-  background-color: var(--color-void);
-  color: var(--color-mist);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   line-height: 1.5;
-  letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  overflow-x: hidden;
+  min-height: 100vh;
+  position: relative;
 }
 
-h1, h2, h3, h4, h5, h6, .page-title, .brand-logo {
-  font-family: var(--font-display);
-  color: var(--color-paper);
-  letter-spacing: -0.022em;
-  font-weight: 510;
+/* Ambient Higgsfield subtle cosmic background lighting */
+body::before {
+  content: '';
+  position: fixed;
+  top: -120px;
+  right: -80px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(209, 254, 23, 0.04) 0%, rgba(153, 69, 255, 0.02) 50%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
 }
 
-code, pre, .mono {
-  font-family: var(--font-mono);
-  letter-spacing: -0.013em;
+h1, h2, h3, h4, .font-heading {
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: -0.025em;
+  font-weight: 600;
 }
 
+.font-mono, .badge, .status-badge, .stat-value {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+a {
+  color: var(--color-acid-yellow);
+  text-decoration: none;
+  transition: opacity var(--transition);
+}
+
+a:hover {
+  opacity: 0.85;
+}
+
+/* Scrollbar Styling */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--color-void);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-graphite);
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-smoke);
+  background: rgba(209, 254, 23, 0.4);
 }

@@ -1,8 +1,12 @@
 import { showToast } from './toast.js';
+import { animateModalIn, animateModalOut } from '../utils/motionTransitions.js';
+
+let isClosing = false;
 
 export function openModal(title, bodyHTML, onSubmit) {
-  closeModal(); // ensure no duplicates
+  closeModal(true); // force close any existing
 
+  isClosing = false;
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.id = 'modal-overlay';
@@ -17,7 +21,7 @@ export function openModal(title, bodyHTML, onSubmit) {
   const closeBtn = document.createElement('button');
   closeBtn.className = 'modal-close';
   closeBtn.innerHTML = '&times;';
-  closeBtn.onclick = closeModal;
+  closeBtn.onclick = () => closeModal();
   header.appendChild(hTitle);
   header.appendChild(closeBtn);
   
@@ -34,7 +38,7 @@ export function openModal(title, bodyHTML, onSubmit) {
   cancelBtn.type = 'button';
   cancelBtn.className = 'btn btn-secondary';
   cancelBtn.textContent = 'Cancel';
-  cancelBtn.onclick = closeModal;
+  cancelBtn.onclick = () => closeModal();
   
   const submitBtn = document.createElement('button');
   submitBtn.type = 'submit';
@@ -43,7 +47,6 @@ export function openModal(title, bodyHTML, onSubmit) {
   
   footer.appendChild(cancelBtn);
   footer.appendChild(submitBtn);
-  
   form.appendChild(footer);
   
   form.addEventListener('submit', async (e) => {
@@ -74,6 +77,9 @@ export function openModal(title, bodyHTML, onSubmit) {
   
   document.body.appendChild(overlay);
   document.body.style.overflow = 'hidden';
+
+  // Trigger motion.dev spring animation
+  animateModalIn(overlay, content);
   
   const escapeHandler = (e) => {
     if (e.key === 'Escape') closeModal();
@@ -89,11 +95,26 @@ export function openModal(title, bodyHTML, onSubmit) {
   };
 }
 
-export function closeModal() {
+export async function closeModal(instant = false) {
   const overlay = document.getElementById('modal-overlay');
-  if (overlay) {
+  if (!overlay || isClosing) return;
+
+  if (instant) {
     if (overlay._cleanup) overlay._cleanup();
     overlay.remove();
     document.body.style.overflow = '';
+    return;
   }
+
+  isClosing = true;
+  const content = overlay.querySelector('.modal-content');
+  if (overlay._cleanup) overlay._cleanup();
+  
+  try {
+    await animateModalOut(overlay, content);
+  } catch (e) {}
+
+  overlay.remove();
+  document.body.style.overflow = '';
+  isClosing = false;
 }

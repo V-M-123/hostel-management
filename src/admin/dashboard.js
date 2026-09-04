@@ -4,6 +4,7 @@ import { renderTable } from '../components/table.js';
 import { renderEmptyState } from '../components/emptyState.js';
 import { navigateTo } from '../router.js';
 import { filterComplaints } from '../utils/complaintsFilter.js';
+import { animateStaggerCards } from '../utils/motionTransitions.js';
 
 export async function render(container) {
   container.innerHTML = '';
@@ -87,6 +88,9 @@ export async function render(container) {
 
   shortcutsSection.appendChild(quickActions);
   container.appendChild(shortcutsSection);
+
+  animateStaggerCards(statsGrid, '.stat-card');
+  animateStaggerCards(quickActions, '.action-card');
 
   // 3. Operational Overview (Recent Complaints)
   const operationalSection = document.createElement('div');

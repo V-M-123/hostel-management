@@ -1,5 +1,5 @@
 /* ============================================================================
-   LINEAR DESIGN SYSTEM — PAGE STYLES
+   HIGGSFIELD AI DESIGN SYSTEM — PAGE STYLES
    ============================================================================ */
 
 /* Auth Page (Sign In / Sign Up) */
@@ -10,39 +10,52 @@
   justify-content: center;
   min-height: 100vh;
   padding: 24px;
-  background-color: var(--color-void);
-  /* Atmospheric radial vignette */
+  background-color: var(--bg-primary);
   background-image: var(--auth-vignette);
   transition: background-color 0.2s ease;
 }
 
 .auth-card {
   width: 100%;
-  max-width: 400px;
-  background: var(--color-carbon);
-  border: 1px solid var(--color-graphite);
-  border-radius: var(--radius-cards);
-  box-shadow: var(--shadow-lg);
-  padding: 32px 28px;
+  max-width: 420px;
+  background: rgba(9, 9, 13, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border-glass-strong);
+  border-radius: 16px;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(209, 254, 23, 0.05);
+  padding: 36px 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-acid-yellow), transparent);
 }
 
 .auth-header {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .auth-header h1 {
-  font-family: var(--font-display);
-  font-size: var(--text-heading-sm);
-  font-weight: 510;
-  color: var(--color-paper);
-  letter-spacing: -0.022em;
-  margin-bottom: 4px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
 }
 
 .auth-header p {
   font-size: 13px;
-  color: var(--color-fog);
+  color: var(--text-muted);
 }
 
 .auth-form {
@@ -51,121 +64,103 @@
 }
 
 .auth-form .btn {
-  margin-top: 8px;
-  padding: 10px;
-  font-size: 13px;
-  font-weight: 510;
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-text);
-}
-
-.auth-form .btn:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
+  margin-top: 12px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
 }
 
 .auth-footer {
   text-align: center;
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--color-graphite);
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-glass);
   font-size: 13px;
-  color: var(--color-fog);
+  color: var(--text-muted);
 }
 
 .auth-footer a {
-  color: var(--color-paper);
-  font-weight: 510;
+  color: var(--color-acid-yellow);
+  font-weight: 600;
   text-decoration: none;
   cursor: pointer;
 }
 
 .auth-footer a:hover {
-  color: var(--accent);
+  text-decoration: underline;
 }
 
-/* Room Occupancy Visualizer */
+/* Room Visualizer Grid */
 .rooms-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 12px;
+  gap: 14px;
 }
 
 .room-card {
-  padding: 16px;
-  background: var(--color-carbon);
-  border: 1px solid var(--color-graphite);
-  border-radius: var(--radius-cards);
-  transition: var(--transition);
+  padding: 18px;
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius);
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
 }
 
 .room-card:hover {
-  background: var(--color-obsidian);
-  border-color: var(--color-smoke);
+  transform: translateY(-2px);
+  border-color: rgba(209, 254, 23, 0.35);
+  box-shadow: 0 0 16px rgba(209, 254, 23, 0.08);
 }
 
 .room-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
-.room-card-number {
-  font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 510;
-  color: var(--color-paper);
+.room-number {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
-.progress-bar-bg {
+.room-occupancy {
+  font-size: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--text-muted);
+}
+
+/* Occupancy Bar */
+.occupancy-bar-bg {
   width: 100%;
-  height: 4px;
-  background: var(--color-obsidian);
+  height: 6px;
+  background: var(--bg-tertiary);
   border-radius: 9999px;
   overflow: hidden;
-  margin: 8px 0;
+  margin-top: 8px;
 }
 
-.progress-bar-fill {
+.occupancy-bar-fill {
   height: 100%;
-  background: var(--accent);
+  background: var(--color-acid-yellow);
   border-radius: 9999px;
-  transition: width 0.2s ease;
+  transition: width 0.4s ease;
+  box-shadow: 0 0 8px rgba(209, 254, 23, 0.4);
 }
 
-/* Notice / Announcement Cards */
-.announcement-card {
-  background: var(--color-carbon);
-  border: 1px solid var(--color-graphite);
-  border-radius: var(--radius-cards);
-  padding: 20px;
-  transition: var(--transition);
-}
-
-.announcement-card:hover {
-  border-color: var(--color-smoke);
-}
-
-.announcement-title {
-  font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 510;
-  color: var(--color-paper);
-  margin-bottom: 6px;
-}
-
-.announcement-meta {
-  font-size: 12px;
-  color: var(--color-fog);
-  margin-bottom: 10px;
+/* Filter Bar */
+.filter-bar {
   display: flex;
+  align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
-.announcement-body {
-  font-size: 13px;
-  color: var(--color-mist);
-  line-height: 1.5;
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }

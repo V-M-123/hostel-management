@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient.js';
 import { showToast } from '../components/toast.js';
 import { navigateTo } from '../router.js';
+import { animateStaggerCards } from '../utils/motionTransitions.js';
 
 export async function render(container) {
   container.innerHTML = '';
@@ -117,6 +118,9 @@ export async function render(container) {
 
   linksSection.appendChild(quickActions);
   container.appendChild(linksSection);
+
+  animateStaggerCards(statsGrid, '.stat-card');
+  animateStaggerCards(quickActions, '.action-card');
 
   // 3. Notice Board (Latest Announcement)
   const noticeSection = document.createElement('div');

@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient.js';
 import { showToast } from '../components/toast.js';
 import { navigateTo } from '../router.js';
+import { animateStaggerCards } from '../utils/motionTransitions.js';
 
 export async function render(container) {
   container.innerHTML = '';
@@ -99,4 +100,7 @@ export async function render(container) {
 
   actionsSection.appendChild(quickActions);
   container.appendChild(actionsSection);
+
+  animateStaggerCards(statsGrid, '.stat-card');
+  animateStaggerCards(quickActions, '.action-card');
 }

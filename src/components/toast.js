@@ -1,3 +1,5 @@
+import { animateToastIn, animateToastOut } from '../utils/motionTransitions.js';
+
 export function showToast(message, type = 'success') {
   let container = document.querySelector('.toast-container');
   if (!container) {
@@ -10,6 +12,7 @@ export function showToast(message, type = 'success') {
   toast.className = `toast toast-${type}`;
   
   const icon = document.createElement('span');
+  icon.style.fontWeight = 'bold';
   icon.textContent = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
   
   const msg = document.createElement('span');
@@ -18,15 +21,19 @@ export function showToast(message, type = 'success') {
   toast.appendChild(icon);
   toast.appendChild(msg);
   
-  toast.onclick = () => {
+  const dismissToast = async () => {
+    try {
+      await animateToastOut(toast);
+    } catch (e) {}
     toast.remove();
   };
+
+  toast.onclick = dismissToast;
   
   container.appendChild(toast);
+  animateToastIn(toast);
   
   setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transition = 'opacity 0.3s';
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
+    dismissToast();
+  }, 3500);
 }
