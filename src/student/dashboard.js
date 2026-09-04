@@ -2,6 +2,7 @@ import { supabase } from '../supabaseClient.js';
 import { showToast } from '../components/toast.js';
 import { navigateTo } from '../router.js';
 import { animateStaggerCards } from '../utils/motionTransitions.js';
+import { createIcon } from '../utils/icons.js';
 
 export async function render(container) {
   container.innerHTML = '';
@@ -47,7 +48,7 @@ export async function render(container) {
   // 1. My Status Section
   const statusSection = document.createElement('div');
   statusSection.className = 'dashboard-section';
-  statusSection.innerHTML = `<div class="section-title">🏠 My Status</div>`;
+  statusSection.innerHTML = `<div class="section-title">My Status</div>`;
 
   const statsGrid = document.createElement('div');
   statsGrid.className = 'cards-grid';
@@ -55,19 +56,19 @@ export async function render(container) {
   // Room Card
   const roomCard = document.createElement('div');
   roomCard.className = 'stat-card glass-panel';
-  if (allocation && allocation.room) {
-    roomCard.innerHTML = `
-      <div class="stat-icon">🚪</div>
-      <div class="stat-value">Room ${allocation.room.room_number}</div>
-      <div class="stat-label">${allocation.room.hostel?.name || 'Block'}, Floor ${allocation.room.floor}</div>
-    `;
-  } else {
-    roomCard.innerHTML = `
-      <div class="stat-icon">❓</div>
-      <div class="stat-value">No Room</div>
-      <div class="stat-label">Not allocated yet</div>
-    `;
-  }
+  const roomIcon = document.createElement('div');
+  roomIcon.className = 'stat-icon';
+  roomIcon.appendChild(createIcon('room', { size: 18, strokeWidth: 2 }));
+  
+  const roomVal = document.createElement('div');
+  roomVal.className = 'stat-value';
+  roomVal.textContent = allocation?.room ? `Room ${allocation.room.room_number}` : 'No Room';
+
+  const roomLbl = document.createElement('div');
+  roomLbl.className = 'stat-label';
+  roomLbl.textContent = allocation?.room ? `${allocation.room.hostel?.name || 'Block'}, Floor ${allocation.room.floor}` : 'Not allocated yet';
+
+  roomCard.append(roomIcon, roomVal, roomLbl);
   statsGrid.appendChild(roomCard);
 
   // Fee Status Card
@@ -78,13 +79,22 @@ export async function render(container) {
     overdueCount = fees.filter(f => f.status === 'overdue').length;
   }
   const totalDues = dueCount + overdueCount;
+
   const feeCard = document.createElement('div');
   feeCard.className = 'stat-card glass-panel';
-  feeCard.innerHTML = `
-    <div class="stat-icon">💰</div>
-    <div class="stat-value">${totalDues} Dues</div>
-    <div class="stat-label">${paidCount} Paid, ${overdueCount} Overdue</div>
-  `;
+  const feeIcon = document.createElement('div');
+  feeIcon.className = 'stat-icon';
+  feeIcon.appendChild(createIcon('fee', { size: 18, strokeWidth: 2 }));
+
+  const feeVal = document.createElement('div');
+  feeVal.className = 'stat-value';
+  feeVal.textContent = `${totalDues} Dues`;
+
+  const feeLbl = document.createElement('div');
+  feeLbl.className = 'stat-label';
+  feeLbl.textContent = `${paidCount} Paid, ${overdueCount} Overdue`;
+
+  feeCard.append(feeIcon, feeVal, feeLbl);
   statsGrid.appendChild(feeCard);
 
   statusSection.appendChild(statsGrid);
@@ -93,25 +103,30 @@ export async function render(container) {
   // 2. Quick Links
   const linksSection = document.createElement('div');
   linksSection.className = 'dashboard-section';
-  linksSection.innerHTML = `<div class="section-title">⚡ Quick Links</div>`;
+  linksSection.innerHTML = `<div class="section-title">Quick Links</div>`;
 
   const quickActions = document.createElement('div');
   quickActions.className = 'quick-actions';
 
   const actions = [
-    { label: 'File Complaint', icon: '📝', path: '#/student/complaints' },
-    { label: 'Fee Details', icon: '💰', path: '#/student/fees' },
-    { label: 'Leave Request', icon: '📅', path: '#/student/leave-requests' },
-    { label: 'Announcements', icon: '📢', path: '#/student/announcements' },
+    { label: 'File Complaint', iconName: 'complaint', path: '#/student/complaints' },
+    { label: 'Fee Details', iconName: 'fee', path: '#/student/fees' },
+    { label: 'Leave Request', iconName: 'leave', path: '#/student/leave-requests' },
+    { label: 'Announcements', iconName: 'announcement', path: '#/student/announcements' },
   ];
 
   actions.forEach(a => {
     const card = document.createElement('div');
     card.className = 'action-card glass-panel';
-    card.innerHTML = `
-      <div class="action-icon">${a.icon}</div>
-      <div class="action-label">${a.label}</div>
-    `;
+    const iconDiv = document.createElement('div');
+    iconDiv.className = 'action-icon';
+    iconDiv.appendChild(createIcon(a.iconName, { size: 18, strokeWidth: 2 }));
+
+    const lblDiv = document.createElement('div');
+    lblDiv.className = 'action-label';
+    lblDiv.textContent = a.label;
+
+    card.append(iconDiv, lblDiv);
     card.onclick = () => navigateTo(a.path);
     quickActions.appendChild(card);
   });
@@ -125,7 +140,7 @@ export async function render(container) {
   // 3. Notice Board (Latest Announcement)
   const noticeSection = document.createElement('div');
   noticeSection.className = 'dashboard-section';
-  noticeSection.innerHTML = `<div class="section-title">📢 Notice Board</div>`;
+  noticeSection.innerHTML = `<div class="section-title">Notice Board</div>`;
 
   const hostelId = allocation?.room?.hostel_id;
   let annQuery = supabase.from('announcements').select('*').order('created_at', { ascending: false }).limit(1);
@@ -145,24 +160,29 @@ export async function render(container) {
   annCard.style.cursor = 'pointer';
   annCard.onclick = () => navigateTo('#/student/announcements');
 
+  const annIconDiv = document.createElement('div');
+  annIconDiv.className = 'stat-icon';
+  annIconDiv.style.margin = '0';
+  annIconDiv.style.width = '42px';
+  annIconDiv.style.height = '42px';
+  annIconDiv.appendChild(createIcon('announcement', { size: 20, strokeWidth: 2 }));
+
+  const contentDiv = document.createElement('div');
+  contentDiv.style.flex = '1';
+
   if (annData) {
-    annCard.innerHTML = `
-      <div class="stat-icon" style="margin: 0; width: 40px; height: 40px; font-size: 20px;">📢</div>
-      <div style="flex: 1;">
-        <div style="font-weight: 700; color: var(--text-primary);">${annData.title}</div>
-        <div style="font-size: 14px; color: var(--text-secondary);">${annData.message.length > 100 ? annData.message.substring(0, 100) + '...' : annData.message}</div>
-      </div>
+    contentDiv.innerHTML = `
+      <div style="font-weight: 700; color: var(--text-primary); font-size: 15px;">${annData.title}</div>
+      <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">${annData.message.length > 100 ? annData.message.substring(0, 100) + '...' : annData.message}</div>
     `;
   } else {
-    annCard.innerHTML = `
-      <div class="stat-icon" style="margin: 0; width: 40px; height: 40px; font-size: 20px;">💤</div>
-      <div style="flex: 1;">
-        <div style="font-weight: 700; color: var(--text-secondary);">No new announcements</div>
-        <div style="font-size: 14px; color: var(--text-muted);">You're all caught up with the latest news.</div>
-      </div>
+    contentDiv.innerHTML = `
+      <div style="font-weight: 600; color: var(--text-secondary);">No new announcements</div>
+      <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">Campus bulletin is clear.</div>
     `;
   }
 
+  annCard.append(annIconDiv, contentDiv);
   noticeSection.appendChild(annCard);
   container.appendChild(noticeSection);
 }

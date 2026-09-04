@@ -1,3 +1,5 @@
+import { createIcon } from '../utils/icons.js';
+
 const THEME_KEY = 'hostelhub_theme';
 
 export function getPreferredTheme() {
@@ -38,12 +40,26 @@ export function createThemeToggle(options = {}) {
     const current = document.documentElement.getAttribute('data-theme') || getPreferredTheme();
     const isDark = current === 'dark';
     btn.setAttribute('title', isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode');
-    btn.innerHTML = `
-      <span class="theme-toggle-track">
-        <span class="theme-toggle-icon">${isDark ? '🌙' : '☀️'}</span>
-      </span>
-      <span class="theme-toggle-label">${isDark ? 'Dark' : 'Light'}</span>
-    `;
+    btn.innerHTML = '';
+    
+    const track = document.createElement('span');
+    track.className = 'theme-toggle-track';
+    
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'theme-toggle-icon';
+    iconSpan.style.display = 'inline-flex';
+    iconSpan.style.alignItems = 'center';
+    iconSpan.style.justifyContent = 'center';
+    
+    const icon = createIcon(isDark ? 'moon' : 'sun', { size: 14, strokeWidth: 2 });
+    iconSpan.appendChild(icon);
+    track.appendChild(iconSpan);
+
+    const label = document.createElement('span');
+    label.className = 'theme-toggle-label';
+    label.textContent = isDark ? 'Dark' : 'Light';
+
+    btn.append(track, label);
   }
 
   btn.addEventListener('click', (e) => {

@@ -1,5 +1,6 @@
 import { signOut } from '../auth.js';
 import { createThemeToggle } from './themeToggle.js';
+import { createIcon } from '../utils/icons.js';
 
 export function renderTopbar(container, user) {
   container.innerHTML = '';
@@ -11,7 +12,8 @@ export function renderTopbar(container, user) {
   
   const hamburger = document.createElement('button');
   hamburger.className = 'hamburger';
-  hamburger.innerHTML = '☰';
+  hamburger.setAttribute('aria-label', 'Toggle Navigation');
+  hamburger.appendChild(createIcon('menu', { size: 20, strokeWidth: 2 }));
   hamburger.onclick = () => {
     document.body.classList.toggle('sidebar-open');
   };
@@ -32,7 +34,11 @@ export function renderTopbar(container, user) {
   
   const logoutBtn = document.createElement('button');
   logoutBtn.className = 'btn btn-secondary btn-sm';
-  logoutBtn.textContent = 'Logout';
+  const logoutIcon = createIcon('logout', { size: 14, strokeWidth: 2 });
+  const logoutText = document.createElement('span');
+  logoutText.textContent = 'Logout';
+  logoutBtn.append(logoutIcon, logoutText);
+
   logoutBtn.onclick = async () => {
     await signOut();
     window.location.reload();

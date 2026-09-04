@@ -5,6 +5,7 @@ import { renderEmptyState } from '../components/emptyState.js';
 import { navigateTo } from '../router.js';
 import { filterComplaints } from '../utils/complaintsFilter.js';
 import { animateStaggerCards } from '../utils/motionTransitions.js';
+import { createIcon } from '../utils/icons.js';
 
 export async function render(container) {
   container.innerHTML = '';
@@ -38,20 +39,29 @@ export async function render(container) {
 
   const occRate = stats.occupancy_percentage ?? stats.occupancy_rate ?? 0;
   const cardData = [
-    { label: 'Total Hostels', value: stats.total_hostels ?? 0, icon: '🏢' },
-    { label: 'Total Rooms', value: stats.total_rooms ?? 0, icon: '🚪' },
-    { label: 'Occupancy %', value: `${occRate}%`, icon: '📊' },
-    { label: 'Pending Complaints', value: stats.pending_complaints ?? 0, icon: '📝' }
+    { label: 'Total Hostels', value: stats.total_hostels ?? 0, iconName: 'hostel' },
+    { label: 'Total Rooms', value: stats.total_rooms ?? 0, iconName: 'room' },
+    { label: 'Occupancy %', value: `${occRate}%`, iconName: 'percent' },
+    { label: 'Pending Complaints', value: stats.pending_complaints ?? 0, iconName: 'complaint' }
   ];
 
   cardData.forEach(c => {
     const card = document.createElement('div');
     card.className = 'stat-card glass-panel';
-    card.innerHTML = `
-      <div class="stat-icon">${c.icon}</div>
-      <div class="stat-value">${c.value || 0}</div>
-      <div class="stat-label">${c.label}</div>
-    `;
+    
+    const iconDiv = document.createElement('div');
+    iconDiv.className = 'stat-icon';
+    iconDiv.appendChild(createIcon(c.iconName, { size: 18, strokeWidth: 2 }));
+
+    const valDiv = document.createElement('div');
+    valDiv.className = 'stat-value';
+    valDiv.textContent = c.value || 0;
+
+    const lblDiv = document.createElement('div');
+    lblDiv.className = 'stat-label';
+    lblDiv.textContent = c.label;
+
+    card.append(iconDiv, valDiv, lblDiv);
     statsGrid.appendChild(card);
   });
 
@@ -61,27 +71,33 @@ export async function render(container) {
   // 2. Management Shortcuts
   const shortcutsSection = document.createElement('div');
   shortcutsSection.className = 'dashboard-section';
-  shortcutsSection.innerHTML = `<div class="section-title">⚡ Management Shortcuts</div>`;
+  shortcutsSection.innerHTML = `<div class="section-title">Management Shortcuts</div>`;
 
   const quickActions = document.createElement('div');
   quickActions.className = 'quick-actions';
 
   const actions = [
-    { label: 'Hostels', icon: '🏢', path: '#/admin/hostels' },
-    { label: 'Wardens', icon: '👤', path: '#/admin/wardens' },
-    { label: 'Students', icon: '🎓', path: '#/admin/students' },
-    { label: 'Complaints', icon: '📝', path: '#/admin/complaints' },
-    { label: 'Fee Reports', icon: '💰', path: '#/admin/fees' },
-    { label: 'Announcements', icon: '📢', path: '#/admin/announcements' },
+    { label: 'Hostels', iconName: 'hostel', path: '#/admin/hostels' },
+    { label: 'Wardens', iconName: 'warden', path: '#/admin/wardens' },
+    { label: 'Students', iconName: 'student', path: '#/admin/students' },
+    { label: 'Complaints', iconName: 'complaint', path: '#/admin/complaints' },
+    { label: 'Fee Reports', iconName: 'fee', path: '#/admin/fees' },
+    { label: 'Announcements', iconName: 'announcement', path: '#/admin/announcements' },
   ];
 
   actions.forEach(a => {
     const card = document.createElement('div');
     card.className = 'action-card glass-panel';
-    card.innerHTML = `
-      <div class="action-icon">${a.icon}</div>
-      <div class="action-label">${a.label}</div>
-    `;
+    
+    const iconDiv = document.createElement('div');
+    iconDiv.className = 'action-icon';
+    iconDiv.appendChild(createIcon(a.iconName, { size: 18, strokeWidth: 2 }));
+
+    const lblDiv = document.createElement('div');
+    lblDiv.className = 'action-label';
+    lblDiv.textContent = a.label;
+
+    card.append(iconDiv, lblDiv);
     card.onclick = () => navigateTo(a.path);
     quickActions.appendChild(card);
   });

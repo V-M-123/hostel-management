@@ -2,6 +2,7 @@ import { supabase } from '../supabaseClient.js';
 import { showToast } from '../components/toast.js';
 import { navigateTo } from '../router.js';
 import { animateStaggerCards } from '../utils/motionTransitions.js';
+import { createIcon } from '../utils/icons.js';
 
 export async function render(container) {
   container.innerHTML = '';
@@ -12,10 +13,13 @@ export async function render(container) {
   if (hError || !hostel) {
     const msg = document.createElement('div');
     msg.className = 'empty-state';
-    msg.innerHTML = `
-      <div class="empty-state-icon">🏢</div>
-      <div class="empty-state-text">You are not assigned to any hostel block yet.</div>
-    `;
+    const iconDiv = document.createElement('div');
+    iconDiv.className = 'empty-state-icon';
+    iconDiv.appendChild(createIcon('hostel', { size: 36 }));
+    const textDiv = document.createElement('div');
+    textDiv.className = 'empty-state-text';
+    textDiv.textContent = 'You are not assigned to any hostel block yet.';
+    msg.append(iconDiv, textDiv);
     container.appendChild(msg);
     return;
   }
@@ -33,7 +37,7 @@ export async function render(container) {
   // 1. Block Stats Section
   const statsSection = document.createElement('div');
   statsSection.className = 'dashboard-section';
-  statsSection.innerHTML = `<div class="section-title">🏘️ Block Stats</div>`;
+  statsSection.innerHTML = `<div class="section-title">Block Statistics</div>`;
 
   const { data: stats, error: statsError } = await supabase.rpc('get_warden_dashboard_stats');
   if (statsError) {
@@ -51,20 +55,29 @@ export async function render(container) {
   const wardenOccPct = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0;
 
   const cardData = [
-    { label: 'Total Rooms', value: totalRooms, icon: '🚪' },
-    { label: 'Occupied Rooms', value: occupiedRooms, icon: '🛏️' },
-    { label: 'Occupancy %', value: `${wardenOccPct}%`, icon: '📊' },
-    { label: 'Open Complaints', value: stats.open_complaints ?? 0, icon: '📝' }
+    { label: 'Total Rooms', value: totalRooms, iconName: 'room' },
+    { label: 'Occupied Rooms', value: occupiedRooms, iconName: 'allocation' },
+    { label: 'Occupancy %', value: `${wardenOccPct}%`, iconName: 'percent' },
+    { label: 'Open Complaints', value: stats.open_complaints ?? 0, iconName: 'complaint' }
   ];
 
   cardData.forEach(c => {
     const card = document.createElement('div');
     card.className = 'stat-card glass-panel';
-    card.innerHTML = `
-      <div class="stat-icon">${c.icon}</div>
-      <div class="stat-value">${c.value || 0}</div>
-      <div class="stat-label">${c.label}</div>
-    `;
+    
+    const iconDiv = document.createElement('div');
+    iconDiv.className = 'stat-icon';
+    iconDiv.appendChild(createIcon(c.iconName, { size: 18, strokeWidth: 2 }));
+
+    const valDiv = document.createElement('div');
+    valDiv.className = 'stat-value';
+    valDiv.textContent = c.value || 0;
+
+    const lblDiv = document.createElement('div');
+    lblDiv.className = 'stat-label';
+    lblDiv.textContent = c.label;
+
+    card.append(iconDiv, valDiv, lblDiv);
     statsGrid.appendChild(card);
   });
 
@@ -74,26 +87,39 @@ export async function render(container) {
   // 2. Action Center
   const actionsSection = document.createElement('div');
   actionsSection.className = 'dashboard-section';
-  actionsSection.innerHTML = `<div class="section-title">⚡ Action Center</div>`;
+  actionsSection.innerHTML = `<div class="section-title">Action Center</div>`;
 
   const quickActions = document.createElement('div');
   quickActions.className = 'quick-actions';
 
   const actions = [
-    { label: 'Manage Rooms', icon: '🚪', path: '#/warden/rooms' },
-    { label: 'Allocations', icon: '🛏️', path: '#/warden/allocations' },
-    { label: 'Review Complaints', icon: '📝', path: '#/warden/complaints', count: stats.open_complaints },
-    { label: 'Leave Requests', icon: '📅', path: '#/warden/leave-requests', count: stats.pending_leaves },
-    { label: 'Post Announcement', icon: '📢', path: '#/warden/announcements' },
+    { label: 'Manage Rooms', iconName: 'room', path: '#/warden/rooms' },
+    { label: 'Allocations', iconName: 'allocation', path: '#/warden/allocations' },
+    { label: 'Review Complaints', iconName: 'complaint', path: '#/warden/complaints', count: stats.open_complaints },
+    { label: 'Leave Requests', iconName: 'leave', path: '#/warden/leave-requests', count: stats.pending_leaves },
+    { label: 'Post Announcement', iconName: 'announcement', path: '#/warden/announcements' },
   ];
 
   actions.forEach(a => {
     const card = document.createElement('div');
     card.className = 'action-card glass-panel';
-    card.innerHTML = `
-      <div class="action-icon">${a.icon}</div>
-      <div class="action-label">${a.label} ${a.count !== undefined ? `<span class="badge badge-warden">${a.count || 0}</span>` : ''}</div>
-    `;
+    
+    const iconDiv = document.createElement('div');
+    iconDiv.className = 'action-icon';
+    iconDiv.appendChild(createIcon(a.iconName, { size: 18, strokeWidth: 2 }));
+
+    const lblDiv = document.createElement('div');
+    lblDiv.className = 'action-label';
+    lblDiv.textContent = a.label;
+    if (a.count !== undefined) {
+      const badge = document.createElement('span');
+      badge.className = 'badge badge-warden';
+      badge.style.marginLeft = '6px';
+      badge.textContent = a.count || 0;
+      lblDiv.appendChild(badge);
+    }
+
+    card.append(iconDiv, lblDiv);
     card.onclick = () => navigateTo(a.path);
     quickActions.appendChild(card);
   });
