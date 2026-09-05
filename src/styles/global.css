@@ -69,10 +69,11 @@
   --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
 
   /* Typography Sizing */
-  --text-display: clamp(2.2rem, 3.2vw + 1rem, 3.6rem);
-  --text-h1: clamp(1.8rem, 2.2vw + 0.8rem, 2.6rem);
-  --text-h2: 1.4rem;
-  --text-h3: 1.15rem;
+  --text-display: clamp(2.6rem, 4vw + 1rem, 4.5rem);
+  --text-h1: clamp(2.2rem, 3vw + 0.8rem, 3.2rem);
+  --text-h2: 2.1rem;
+  --text-h3: 1.75rem;
+  --text-h4: 1.4rem;
   --text-body: 0.9375rem;
   --text-sm: 0.8125rem;
   --text-micro: 0.6875rem;
@@ -89,11 +90,11 @@
   --shadow-modal: 0 0 0 1px var(--color-rule-2), 0 32px 64px -24px rgba(0, 0, 0, 0.95);
 
   --ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
-  --transition: 0.2s var(--ease-soft);
+  --transition: 0.30s cubic-bezier(0.16, 1, 0.3, 1);
   --dur-pulse: 4s;
 }
 
-/* Base Reset & Two-Register Foundation */
+/* Base Reset & Foundation */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -112,13 +113,6 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: clip;
-}
-
-/* Two-Register Typography Rule:
-   1. All prose is LOWERCASE
-   2. All mono tags/eyebrows are UPPERCASE */
-body, h1, h2, h3, h4, h5, h6, p, a, span, button, input, select, textarea, label {
-  text-transform: lowercase;
 }
 
 /* Mono Technical Labels (UPPERCASE Exception) */
@@ -141,12 +135,36 @@ body, h1, h2, h3, h4, h5, h6, p, a, span, button, input, select, textarea, label
 }
 
 /* Heading Typography: Classical Instrument Serif */
-h1, h2, h3, .page-title, .hero-title, .section-title-display {
+h1, h2, h3, h4, .page-title, .hero-title, .section-title-display, .modal-title {
   font-family: var(--font-display);
   font-weight: 400;
   color: var(--color-ink);
-  line-height: 1.12;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+h1, .page-title {
+  font-size: var(--text-h1);
   letter-spacing: -0.025em;
+  margin-bottom: 8px;
+}
+
+h2 {
+  font-size: var(--text-h2);
+  letter-spacing: -0.02em;
+  margin-bottom: 10px;
+}
+
+h3 {
+  font-size: var(--text-h3);
+  letter-spacing: -0.015em;
+  margin-bottom: 8px;
+}
+
+h4 {
+  font-size: var(--text-h4);
+  letter-spacing: -0.01em;
+  margin-bottom: 6px;
 }
 
 /* Verb Landmark (Lumen Signature Move: Upright em in Coral Chord with Draw-in Underline) */

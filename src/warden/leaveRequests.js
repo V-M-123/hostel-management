@@ -1,22 +1,16 @@
 import { supabase } from '../supabaseClient.js';
 import { showToast } from '../components/toast.js';
 import { renderTable } from '../components/table.js';
+import { createPageLayout } from '../components/layout.js';
+import { createStatusBadge } from '../components/ui.js';
+import { formatDateForUI } from '../utils/date.js';
 
 export async function render(container) {
   container.innerHTML = '';
-  
-  const header = document.createElement('div');
-  header.className = 'page-header';
-  const title = document.createElement('h1');
-  title.className = 'page-title';
-  title.textContent = 'Leave Requests';
-  header.appendChild(title);
-  container.appendChild(header);
 
-  const filterBar = document.createElement('div');
-  filterBar.className = 'filter-bar';
-  filterBar.style.marginBottom = '20px';
-  
+  const filterContainer = document.createElement('div');
+  filterContainer.className = 'page-actions-container';
+
   const statusGroup = document.createElement('div');
   statusGroup.className = 'filter-group';
   statusGroup.innerHTML = `
@@ -28,8 +22,12 @@ export async function render(container) {
       <option value="rejected">Rejected</option>
     </select>
   `;
-  filterBar.appendChild(statusGroup);
-  container.appendChild(filterBar);
+  filterContainer.appendChild(statusGroup);
+
+  createPageLayout(container, {
+    title: 'Leave Requests',
+    actions: [filterContainer]
+  });
 
   const tableContainer = document.createElement('div');
   container.appendChild(tableContainer);
@@ -37,11 +35,11 @@ export async function render(container) {
   const loadData = async () => {
     tableContainer.innerHTML = '';
     const statusFilter = document.getElementById('statusFilter').value;
-    
+
     let query = supabase
       .from('leave_requests')
       .select('*, student:student_id(full_name)');
-      
+
     if (statusFilter !== 'all') {
       query = query.eq('status', statusFilter);
     }
@@ -55,21 +53,16 @@ export async function render(container) {
     renderTable(tableContainer, {
       columns: [
         { key: 'student', label: 'Student', render: (val, row) => row.student?.full_name || 'Unknown' },
-        { key: 'from_date', label: 'From Date', render: (val, row) => new Date(row.from_date).toLocaleDateString() },
-        { key: 'to_date', label: 'To Date', render: (val, row) => new Date(row.to_date).toLocaleDateString() },
+        { key: 'from_date', label: 'From Date', render: (val) => formatDateForUI(val) },
+        { key: 'to_date', label: 'To Date', render: (val) => formatDateForUI(val) },
         { key: 'reason', label: 'Reason', render: (val, row) => row.reason },
-        { key: 'status', label: 'Status', render: (val, row) => {
-            const badge = document.createElement('span');
-            badge.className = `status-badge status-${row.status}`;
-            badge.textContent = row.status;
-            return badge;
-        }}
+        { key: 'status', label: 'Status', render: (val) => createStatusBadge(val) }
       ],
       rows: data,
       actions: [
-        { 
-          label: 'Approve', 
-          class: 'btn btn-sm btn-primary', 
+        {
+          label: 'Approve',
+          class: 'btn btn-sm btn-primary',
           show: (row) => row.status === 'pending',
           onClick: async (row) => {
             if (row.status !== 'pending') return;
@@ -78,9 +71,9 @@ export async function render(container) {
             else { showToast('Request approved', 'success'); await loadData(); }
           }
         },
-        { 
-          label: 'Reject', 
-          class: 'btn btn-sm btn-danger', 
+        {
+          label: 'Reject',
+          class: 'btn btn-sm btn-danger',
           show: (row) => row.status === 'pending',
           onClick: async (row) => {
             if (row.status !== 'pending') return;
@@ -92,12 +85,6 @@ export async function render(container) {
       ],
       emptyMessage: 'No leave requests found.'
     });
-
-    // Disable actions if not pending. Our table component doesn't easily support dynamic hidden actions,
-    // so we can just hide them via CSS on render by wrapping the render table and finding buttons,
-    // but a cleaner way is just the check in onClick and relying on users not clicking them.
-    // However, to make the UI look right, let's just accept they are there but do nothing.
-    // A more advanced table component would take a boolean for action visibility.
   };
 
   document.getElementById('statusFilter').addEventListener('change', loadData);

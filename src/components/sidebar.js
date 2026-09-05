@@ -10,11 +10,12 @@ export function renderSidebar(container, role, currentPath) {
   
   const brandIcon = document.createElement('div');
   brandIcon.className = 'sidebar-brand-icon';
-  const hfIcon = createIcon('building', { size: 14, strokeWidth: 2.2, color: 'var(--color-accent-text)' });
+  const hfIcon = createIcon('building', { size: 15, strokeWidth: 2.2, color: 'var(--color-accent-text)' });
   brandIcon.appendChild(hfIcon);
 
   const brandText = document.createElement('span');
-  brandText.textContent = 'hostelhub';
+  brandText.className = 'sidebar-brand-text';
+  brandText.textContent = 'HostelHub';
 
   brand.appendChild(brandIcon);
   brand.appendChild(brandText);
@@ -28,9 +29,7 @@ export function renderSidebar(container, role, currentPath) {
   nav.appendChild(indicator);
 
   const eyebrow = document.createElement('div');
-  eyebrow.className = 'eyebrow';
-  eyebrow.style.padding = '0 12px 10px 12px';
-  eyebrow.style.color = 'var(--color-muted)';
+  eyebrow.className = 'sidebar-eyebrow';
   eyebrow.textContent = `01 · ${role.toUpperCase()} CONSOLE`;
   nav.appendChild(eyebrow);
 
@@ -41,6 +40,7 @@ export function renderSidebar(container, role, currentPath) {
     const link = document.createElement('a');
     link.className = 'sidebar-link';
     link.dataset.path = l.path;
+    link.title = l.label;
     const isActive = currentPath === l.path || (currentPath === '' && l.path === `#/${role}/dashboard`);
     if (isActive) {
       link.classList.add('active');
@@ -48,9 +48,10 @@ export function renderSidebar(container, role, currentPath) {
     
     const iconEl = document.createElement('span');
     iconEl.className = 'sidebar-icon';
-    iconEl.appendChild(createIcon(l.iconName, { size: 15, strokeWidth: 1.8 }));
+    iconEl.appendChild(createIcon(l.iconName, { size: 16, strokeWidth: 1.8 }));
 
     const text = document.createElement('span');
+    text.className = 'sidebar-label';
     text.textContent = l.label;
     
     link.appendChild(iconEl);
@@ -83,6 +84,21 @@ export function renderSidebar(container, role, currentPath) {
     setTimeout(updateIndicatorPosition, 50);
   });
 
+  container.addEventListener('mouseenter', () => {
+    container.classList.add('is-hovered');
+    document.body.classList.add('sidebar-hovered');
+    setTimeout(updateIndicatorPosition, 80);
+    setTimeout(updateIndicatorPosition, 320);
+  });
+
+  container.addEventListener('mouseleave', () => {
+    container.classList.remove('is-hovered');
+    document.body.classList.remove('sidebar-hovered');
+    setTimeout(updateIndicatorPosition, 80);
+    setTimeout(updateIndicatorPosition, 320);
+  });
+
+  container.addEventListener('transitionend', updateIndicatorPosition);
   window.addEventListener('resize', updateIndicatorPosition, { passive: true });
 
   container.appendChild(nav);
@@ -91,31 +107,31 @@ export function renderSidebar(container, role, currentPath) {
 function getLinks(role) {
   if (role === 'admin') {
     return [
-      { label: 'dashboard', iconName: 'dashboard', path: '#/admin/dashboard' },
-      { label: 'hostels', iconName: 'hostel', path: '#/admin/hostels' },
-      { label: 'wardens', iconName: 'warden', path: '#/admin/wardens' },
-      { label: 'students', iconName: 'student', path: '#/admin/students' },
-      { label: 'complaints', iconName: 'complaint', path: '#/admin/complaints' },
-      { label: 'fee reports', iconName: 'fee', path: '#/admin/fees' },
-      { label: 'announcements', iconName: 'announcement', path: '#/admin/announcements' }
+      { label: 'Dashboard', iconName: 'dashboard', path: '#/admin/dashboard' },
+      { label: 'Hostels', iconName: 'hostel', path: '#/admin/hostels' },
+      { label: 'Wardens', iconName: 'warden', path: '#/admin/wardens' },
+      { label: 'Students', iconName: 'student', path: '#/admin/students' },
+      { label: 'Complaints', iconName: 'complaint', path: '#/admin/complaints' },
+      { label: 'Fee Reports', iconName: 'fee', path: '#/admin/fees' },
+      { label: 'Announcements', iconName: 'announcement', path: '#/admin/announcements' }
     ];
   } else if (role === 'warden') {
     return [
-      { label: 'dashboard', iconName: 'dashboard', path: '#/warden/dashboard' },
-      { label: 'rooms', iconName: 'room', path: '#/warden/rooms' },
-      { label: 'allocations', iconName: 'allocation', path: '#/warden/allocations' },
-      { label: 'complaints', iconName: 'complaint', path: '#/warden/complaints' },
-      { label: 'leave requests', iconName: 'leave', path: '#/warden/leave-requests' },
-      { label: 'announcements', iconName: 'announcement', path: '#/warden/announcements' }
+      { label: 'Dashboard', iconName: 'dashboard', path: '#/warden/dashboard' },
+      { label: 'Rooms', iconName: 'room', path: '#/warden/rooms' },
+      { label: 'Allocations', iconName: 'allocation', path: '#/warden/allocations' },
+      { label: 'Complaints', iconName: 'complaint', path: '#/warden/complaints' },
+      { label: 'Leave Requests', iconName: 'leave', path: '#/warden/leave-requests' },
+      { label: 'Announcements', iconName: 'announcement', path: '#/warden/announcements' }
     ];
   } else {
     return [
-      { label: 'dashboard', iconName: 'dashboard', path: '#/student/dashboard' },
-      { label: 'my room', iconName: 'room', path: '#/student/room' },
-      { label: 'complaints', iconName: 'complaint', path: '#/student/complaints' },
-      { label: 'fees', iconName: 'fee', path: '#/student/fees' },
-      { label: 'leave requests', iconName: 'leave', path: '#/student/leave-requests' },
-      { label: 'announcements', iconName: 'announcement', path: '#/student/announcements' }
+      { label: 'Dashboard', iconName: 'dashboard', path: '#/student/dashboard' },
+      { label: 'My Room', iconName: 'room', path: '#/student/room' },
+      { label: 'Complaints', iconName: 'complaint', path: '#/student/complaints' },
+      { label: 'Fees', iconName: 'fee', path: '#/student/fees' },
+      { label: 'Leave Requests', iconName: 'leave', path: '#/student/leave-requests' },
+      { label: 'Announcements', iconName: 'announcement', path: '#/student/announcements' }
     ];
   }
 }

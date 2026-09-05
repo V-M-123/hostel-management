@@ -3,10 +3,12 @@ import { showToast } from '../components/toast.js';
 import { renderTable } from '../components/table.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { getAssignedHostelsForWarden } from '../utils/wardenHelpers.js';
+import { createPageLayout } from '../components/layout.js';
+import { formatDateForUI } from '../utils/date.js';
 
 export async function render(container) {
   container.innerHTML = '';
-  
+
   const { data: { user } } = await supabase.auth.getUser();
   const assignedHostels = await getAssignedHostelsForWarden(user.id);
 
@@ -25,33 +27,29 @@ export async function render(container) {
   const hostelIds = assignedHostels.map(h => h.id);
   const hostelMap = Object.fromEntries(assignedHostels.map(h => [h.id, h.name]));
 
-  const header = document.createElement('div');
-  header.className = 'page-header';
-  const title = document.createElement('h1');
-  title.className = 'page-title';
-  title.textContent = 'Announcements';
-  header.appendChild(title);
+  const actionsContainer = document.createElement('div');
+  actionsContainer.className = 'page-actions-container';
 
-  const actions = document.createElement('div');
-  actions.className = 'page-actions';
   const newBtn = document.createElement('button');
   newBtn.className = 'btn btn-primary';
   newBtn.textContent = '+ New Announcement';
   newBtn.onclick = () => openAnnouncementModal();
-  actions.appendChild(newBtn);
-  header.appendChild(actions);
-  container.appendChild(header);
+  actionsContainer.appendChild(newBtn);
+
+  createPageLayout(container, {
+    title: 'Announcements',
+    actions: [actionsContainer]
+  });
 
   const tableContainer = document.createElement('div');
   container.appendChild(tableContainer);
 
   const loadData = async () => {
     tableContainer.innerHTML = '';
-    
+
     let announcements = [];
     const filterCond = hostelIds.map(id => `hostel_id.eq.${id}`).join(',') + ',hostel_id.is.null';
 
-    // 1. Try query with author join
     let { data, error } = await supabase
       .from('announcements')
       .select('*, author:posted_by(full_name)')
@@ -59,7 +57,6 @@ export async function render(container) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      // 2. Resilient fallback query
       const fallback = await supabase
         .from('announcements')
         .select('*')
@@ -72,7 +69,6 @@ export async function render(container) {
       }
       announcements = fallback.data || [];
 
-      // Enrich authors from profiles manually if needed
       const userIds = [...new Set(announcements.map(a => a.posted_by).filter(Boolean))];
       if (userIds.length > 0) {
         const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', userIds);
@@ -91,21 +87,21 @@ export async function render(container) {
         { key: 'message', label: 'Message', render: (val, row) => row.message.length > 50 ? row.message.substring(0, 50) + '...' : row.message },
         { key: 'scope', label: 'Scope', render: (val, row) => row.hostel_id ? (hostelMap[row.hostel_id] || 'Hostel') : 'Global' },
         { key: 'author', label: 'Posted By', render: (val, row) => row.author?.full_name || 'Staff' },
-        { key: 'date', label: 'Date', render: (val, row) => new Date(row.created_at).toLocaleDateString() }
+        { key: 'date', label: 'Date', render: (val, row) => formatDateForUI(row.created_at) }
       ],
       rows: announcements,
       actions: [
-        { 
-          label: 'Edit', 
-          class: 'btn btn-sm btn-secondary', 
+        {
+          label: 'Edit',
+          class: 'btn btn-sm btn-secondary',
           onClick: (row) => {
             if (row.posted_by === user.id) openAnnouncementModal(row);
             else showToast('You can only edit your own announcements', 'error');
-          } 
+          }
         },
-        { 
-          label: 'Delete', 
-          class: 'btn btn-sm btn-danger', 
+        {
+          label: 'Delete',
+          class: 'btn btn-sm btn-danger',
           onClick: async (row) => {
             if (row.posted_by !== user.id) {
               showToast('You can only delete your own announcements', 'error');
@@ -151,7 +147,7 @@ export async function render(container) {
       const title = formData.get('title');
       const message = formData.get('message');
       const targetHostelId = formData.get('hostel_id') || primaryHostel.id;
-      
+
       if (isEdit) {
         const { error } = await supabase.from('announcements').update({ title, message, hostel_id: targetHostelId }).eq('id', announcement.id);
         if (error) {
@@ -165,12 +161,12 @@ export async function render(container) {
           return;
         }
       }
-      
+
       showToast(`Announcement ${isEdit ? 'updated' : 'created'} successfully`, 'success');
       closeModal();
       await loadData();
     });
-    
+
     if (isEdit) {
         document.getElementById('annTitle').value = announcement.title;
         document.getElementById('annMessage').value = announcement.message;

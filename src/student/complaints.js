@@ -3,27 +3,29 @@ import { showToast } from '../components/toast.js';
 import { renderTable } from '../components/table.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { filterComplaints } from '../utils/complaintsFilter.js';
+import { createPageLayout } from '../components/layout.js';
+import { createStatusBadge } from '../components/ui.js';
+import { formatDateForUI } from '../utils/date.js';
 
 export async function render(container) {
   container.innerHTML = '';
 
-  const header = document.createElement('div');
-  header.className = 'page-header';
-  const title = document.createElement('h1');
-  title.className = 'page-title';
-  title.textContent = 'My Complaints';
-  
-  const actions = document.createElement('div');
-  actions.className = 'page-actions';
+  const actionsContainer = document.createElement('div');
+  actionsContainer.className = 'page-actions-container';
+
   const addBtn = document.createElement('button');
   addBtn.className = 'btn btn-primary';
   addBtn.textContent = '+ New Complaint';
-  actions.appendChild(addBtn);
 
-  header.append(title, actions);
-  container.appendChild(header);
+  actionsContainer.appendChild(addBtn);
+
+  createPageLayout(container, {
+    title: 'My Complaints',
+    actions: [actionsContainer]
+  });
 
   const filterBar = document.createElement('div');
+  filterBar.className = 'filter-bar';
   filterBar.style.marginBottom = '16px';
   filterBar.innerHTML = `
     <select id="studentStatusFilter" class="form-select" style="width: auto; display: inline-block;">
@@ -39,7 +41,6 @@ export async function render(container) {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) { showToast('Authentication error', 'error'); return; }
 
-  // Fetch student's room allocation safely (avoids maybeSingle multiple rows error)
   const { data: allocations, error: allocError } = await supabase
     .from('room_allocations')
     .select('id, room_id, status, room:room_id(id, room_number, floor, hostel:hostel_id(name))')
@@ -49,7 +50,6 @@ export async function render(container) {
 
   let allocation = allocations && allocations.length > 0 ? allocations[0] : null;
 
-  // Fallback to any latest allocation if no active found
   if (!allocation) {
     const { data: anyAlloc } = await supabase
       .from('room_allocations')
@@ -62,7 +62,6 @@ export async function render(container) {
     }
   }
 
-  // If no room is allocated, display a helpful notice banner
   if (!allocation) {
     const notice = document.createElement('div');
     notice.style.marginBottom = '20px';
@@ -86,9 +85,8 @@ export async function render(container) {
 
   addBtn.addEventListener('click', async () => {
     if (!allocation) {
-      // Fetch available rooms so the student can select or contact admin
       const { data: rooms } = await supabase.from('rooms').select('id, room_number, hostel:hostel_id(name)').order('room_number').limit(50);
-      
+
       if (!rooms || rooms.length === 0) {
         showToast('You must be assigned to a room by your warden or administrator before filing a complaint.', 'error');
         return;
@@ -207,14 +205,9 @@ export async function render(container) {
         { key: 'category', label: 'Category', render: (val) => val.charAt(0).toUpperCase() + val.slice(1) },
         { key: 'description', label: 'Description', render: (val) => val.length > 80 ? val.substring(0, 80) + '...' : val },
         { key: 'room', label: 'Room', render: (val) => val?.room_number || 'N/A' },
-        { key: 'status', label: 'Status', render: (val) => {
-            const span = document.createElement('span');
-            span.className = `status-badge status-${val}`;
-            span.textContent = val.replace('_', ' ').toUpperCase();
-            return span;
-        }},
-        { key: 'created_at', label: 'Filed On', render: (val) => new Date(val).toLocaleDateString() },
-        { key: 'resolved_at', label: 'Resolved On', render: (val) => val ? new Date(val).toLocaleDateString() : '-' },
+        { key: 'status', label: 'Status', render: (val) => createStatusBadge(val) },
+        { key: 'created_at', label: 'Filed On', render: (val) => formatDateForUI(val) },
+        { key: 'resolved_at', label: 'Resolved On', render: (val) => formatDateForUI(val) },
       ],
       rows: filtered || [],
       emptyMessage: 'No active complaints filed'

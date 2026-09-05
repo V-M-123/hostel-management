@@ -3,21 +3,15 @@ import { showToast } from '../components/toast.js';
 import { renderTable } from '../components/table.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { createIcon } from '../utils/icons.js';
+import { createPageLayout } from '../components/layout.js';
+import { createStatusBadge } from '../components/ui.js';
 
 export async function render(container) {
   container.innerHTML = '';
-  
-  const header = document.createElement('div');
-  header.className = 'page-header';
-  header.innerHTML = `
-    <div>
-      <h1 class="page-title">Manage Wardens</h1>
-      <p style="color: var(--text-secondary); font-size: 14px;">Warden staff directory and multi-warden hostel assignments (1:M)</p>
-    </div>
-  `;
 
-  const actions = document.createElement('div');
-  actions.className = 'page-actions';
+  const actionsContainer = document.createElement('div');
+  actionsContainer.className = 'page-actions-container';
+
   const assignBtn = document.createElement('button');
   assignBtn.className = 'btn btn-primary';
   const plusIcon = createIcon('plus', { size: 16, strokeWidth: 2, color: '#000000' });
@@ -25,9 +19,13 @@ export async function render(container) {
   btnText.textContent = 'Assign Warden to Hostel';
   assignBtn.append(plusIcon, btnText);
   assignBtn.onclick = () => openAssignModal();
-  actions.appendChild(assignBtn);
-  header.appendChild(actions);
-  container.appendChild(header);
+  actionsContainer.appendChild(assignBtn);
+
+  createPageLayout(container, {
+    title: 'Manage Wardens',
+    description:'', //'Warden staff directory and multi-warden hostel assignments (1:M)',
+    actions: [actionsContainer]
+  });
 
   const tableContainer = document.createElement('div');
   container.appendChild(tableContainer);
@@ -55,9 +53,8 @@ export async function render(container) {
       let res = await supabase
         .from('hostel_wardens')
         .select('id, hostel_id, warden_id, hostel:hostel_id(id, name)');
-      
+
       if (res.error) {
-        // Fallback without embedded hostel join
         const fbRes = await supabase.from('hostel_wardens').select('id, hostel_id, warden_id');
         hwLinks = fbRes.data || [];
       } else {
@@ -68,11 +65,9 @@ export async function render(container) {
     }
 
     const rows = (wardens || []).map(w => {
-      // Find all hostels assigned to this warden
       const assignedHostelNames = [];
       const assignedHostelIds = [];
 
-      // Check hostel_wardens (1:M table)
       hwLinks?.forEach(link => {
         if (link.warden_id === w.id) {
           const hId = link.hostel?.id || link.hostel_id;
@@ -84,7 +79,6 @@ export async function render(container) {
         }
       });
 
-      // Fallback: check hostels.warden_id
       hostels?.forEach(h => {
         if (h.warden_id === w.id && !assignedHostelIds.includes(h.id)) {
           assignedHostelNames.push(h.name);
@@ -111,37 +105,32 @@ export async function render(container) {
               span.textContent = 'Unassigned';
               return span;
             }
-            const span = document.createElement('span');
-            span.className = 'status-badge status-open';
-            span.textContent = val;
-            return span;
+            return createStatusBadge(val);
         }}
       ],
       rows: rows,
       actions: [
-        { 
-          label: 'Assign/Reassign', 
-          class: 'btn btn-sm btn-secondary', 
+        {
+          label: 'Assign/Reassign',
+          class: 'btn btn-sm btn-secondary',
           onClick: (row) => openAssignModal(row.id)
         },
-        { 
-          label: 'Unassign All', 
-          class: 'btn btn-sm btn-outline', 
+        {
+          label: 'Unassign All',
+          class: 'btn btn-sm btn-outline',
           onClick: async (row) => {
             if (row.assignedCount === 0) {
               showToast('Warden is not assigned to any hostel.', 'info');
               return;
             }
             if (confirm(`Unassign ${row.full_name} from all assigned hostels?`)) {
-              // 1. Remove from hostel_wardens
               await supabase.from('hostel_wardens').delete().eq('warden_id', row.id);
-              // 2. Clear from hostels.warden_id
               await supabase.from('hostels').update({ warden_id: null }).eq('warden_id', row.id);
-              
+
               showToast('Warden unassigned from all hostels', 'success');
               await loadData();
             }
-          } 
+          }
         }
       ],
       emptyMessage: 'No wardens found.'
@@ -182,11 +171,9 @@ export async function render(container) {
     openModal('Assign Warden to Hostel', bodyHTML, async (formData) => {
       const userId = formData.get('user_id');
       const hostelId = formData.get('hostel_id');
-      
-      // 1. Ensure user has warden role
+
       await supabase.from('profiles').update({ role: 'warden' }).eq('id', userId);
 
-      // 2. Insert into hostel_wardens junction table (1:M)
       const { error: jError } = await supabase
         .from('hostel_wardens')
         .upsert({ hostel_id: hostelId, warden_id: userId }, { onConflict: 'hostel_id,warden_id' });

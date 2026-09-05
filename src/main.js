@@ -200,6 +200,10 @@ function renderAppShell(container, user) {
   
   const sidebarEl = document.createElement('div');
   sidebarEl.id = 'sidebar';
+  const backdropEl = document.createElement('div');
+  backdropEl.className = 'sidebar-backdrop';
+  backdropEl.onclick = () => document.body.classList.remove('sidebar-open');
+
   const topbarEl = document.createElement('div');
   topbarEl.id = 'topbar';
   const contentWrapper = document.createElement('div');
@@ -212,6 +216,7 @@ function renderAppShell(container, user) {
   contentWrapper.appendChild(contentEl);
   
   container.appendChild(sidebarEl);
+  container.appendChild(backdropEl);
   container.appendChild(contentWrapper);
 
   const routeMap = {

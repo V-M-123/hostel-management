@@ -3,10 +3,12 @@ import { showToast } from '../components/toast.js';
 import { renderTable } from '../components/table.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { getAssignedHostelsForWarden } from '../utils/wardenHelpers.js';
+import { createPageLayout } from '../components/layout.js';
+import { createStatusBadge } from '../components/ui.js';
 
 export async function render(container) {
   container.innerHTML = '';
-  
+
   const { data: { user } } = await supabase.auth.getUser();
   const assignedHostels = await getAssignedHostelsForWarden(user.id);
 
@@ -22,29 +24,10 @@ export async function render(container) {
   }
 
   const primaryHostel = assignedHostels[0];
-  const hostelIds = assignedHostels.map(h => h.id);
   let selectedHostelId = primaryHostel.id;
 
-  const header = document.createElement('div');
-  header.className = 'page-header';
-  header.style.display = 'flex';
-  header.style.justifyContent = 'space-between';
-  header.style.alignItems = 'flex-start';
-  header.style.flexWrap = 'wrap';
-  header.style.gap = '16px';
-
-  const titleDiv = document.createElement('div');
-  titleDiv.innerHTML = `
-    <h1 class="page-title">Manage Rooms</h1>
-    <p style="color: var(--text-secondary); font-size: 14px;">${assignedHostels.map(h => h.name).join(', ')}</p>
-  `;
-  header.appendChild(titleDiv);
-
-  const actions = document.createElement('div');
-  actions.className = 'page-actions';
-  actions.style.display = 'flex';
-  actions.style.gap = '10px';
-  actions.style.alignItems = 'center';
+  const actionsContainer = document.createElement('div');
+  actionsContainer.className = 'page-actions-container';
 
   if (assignedHostels.length > 1) {
     const hostelSelect = document.createElement('select');
@@ -55,16 +38,20 @@ export async function render(container) {
       selectedHostelId = e.target.value;
       loadData();
     };
-    actions.appendChild(hostelSelect);
+    actionsContainer.appendChild(hostelSelect);
   }
 
   const newBtn = document.createElement('button');
   newBtn.className = 'btn btn-primary';
   newBtn.textContent = '+ New Room';
   newBtn.onclick = () => openRoomModal();
-  actions.appendChild(newBtn);
-  header.appendChild(actions);
-  container.appendChild(header);
+  actionsContainer.appendChild(newBtn);
+
+  createPageLayout(container, {
+    title: 'Manage Rooms',
+    description: `${assignedHostels.map(h => h.name).join(', ')}`,
+    actions: [actionsContainer]
+  });
 
   const tableContainer = document.createElement('div');
   container.appendChild(tableContainer);
@@ -89,19 +76,18 @@ export async function render(container) {
         { key: 'status', label: 'Status', render: (val, row) => {
             const occ = row.occupied_count || 0;
             let status = 'Vacant';
-            let statusClass = 'status-approved';
-            
+            let statusVal = 'approved';
+
             if (occ >= row.capacity) {
               status = 'Full';
-              statusClass = 'status-vacated';
+              statusVal = 'vacated';
             } else if (occ > 0) {
               status = 'Partial';
-              statusClass = 'status-pending';
+              statusVal = 'pending';
             }
 
-            const badge = document.createElement('span');
-            badge.className = `status-badge ${statusClass}`;
-            badge.textContent = status;
+            const badge = createStatusBadge(statusVal);
+            badge.textContent = status.toUpperCase();
             return badge;
         }}
       ],
@@ -146,7 +132,7 @@ export async function render(container) {
       const room_number = formData.get('room_number');
       const floor = parseInt(formData.get('floor'));
       const capacity = parseInt(formData.get('capacity'));
-      
+
       let res;
       if (isEdit) {
         if ((room.occupied_count || 0) > capacity) {

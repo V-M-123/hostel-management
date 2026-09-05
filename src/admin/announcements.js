@@ -2,49 +2,45 @@ import { supabase } from '../supabaseClient.js';
 import { showToast } from '../components/toast.js';
 import { renderTable } from '../components/table.js';
 import { openModal, closeModal } from '../components/modal.js';
+import { createPageLayout } from '../components/layout.js';
+import { formatDateForUI } from '../utils/date.js';
 
 export async function render(container) {
   container.innerHTML = '';
-  
-  const header = document.createElement('div');
-  header.className = 'page-header';
-  const title = document.createElement('h1');
-  title.className = 'page-title';
-  title.textContent = 'Announcements';
-  header.appendChild(title);
 
-  const actions = document.createElement('div');
-  actions.className = 'page-actions';
+  const actionsContainer = document.createElement('div');
+  actionsContainer.className = 'page-actions-container';
+
   const newBtn = document.createElement('button');
   newBtn.className = 'btn btn-primary';
   newBtn.textContent = '+ New Announcement';
   newBtn.onclick = () => openAnnouncementModal();
-  actions.appendChild(newBtn);
-  header.appendChild(actions);
-  container.appendChild(header);
+  actionsContainer.appendChild(newBtn);
+
+  createPageLayout(container, {
+    title: 'Announcements',
+    actions: [actionsContainer]
+  });
 
   const tableContainer = document.createElement('div');
   container.appendChild(tableContainer);
 
   const loadData = async () => {
     tableContainer.innerHTML = '';
-    
+
     let announcements = [];
-    // 1. Attempt join with hostel and author
     let { data, error } = await supabase
       .from('announcements')
       .select('*, hostel:hostel_id(name), author:posted_by(full_name)')
       .order('created_at', { ascending: false });
 
     if (error) {
-      // 2. Resilient fallback if author:posted_by foreign key join is missing in schema cache
       const fallback = await supabase
         .from('announcements')
         .select('*, hostel:hostel_id(name)')
         .order('created_at', { ascending: false });
-      
+
       if (fallback.error) {
-        // 3. Ultra fallback: simple select
         const simple = await supabase.from('announcements').select('*').order('created_at', { ascending: false });
         if (simple.error) {
           showToast(simple.error.message, 'error');
@@ -55,7 +51,6 @@ export async function render(container) {
         announcements = fallback.data || [];
       }
 
-      // Enrich authors from profiles manually if not joined
       const userIds = [...new Set(announcements.map(a => a.posted_by).filter(Boolean))];
       if (userIds.length > 0) {
         const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', userIds);
@@ -73,7 +68,7 @@ export async function render(container) {
         { key: 'title', label: 'Title', render: (val, row) => row.title },
         { key: 'hostel', label: 'Scope', render: (val, row) => row.hostel ? row.hostel.name : 'Global' },
         { key: 'author', label: 'Posted By', render: (val, row) => row.author?.full_name || 'Admin' },
-        { key: 'created_at', label: 'Date', render: (val) => new Date(val).toLocaleDateString() }
+        { key: 'created_at', label: 'Date', render: (val) => formatDateForUI(val) }
       ],
       rows: announcements,
       actions: [
@@ -123,9 +118,9 @@ export async function render(container) {
       const title = formData.get('title');
       const message = formData.get('message');
       const hostelId = formData.get('hostel_id') || null;
-      
+
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       let res;
       if (isEdit) {
         res = await supabase.from('announcements').update({ title, message, hostel_id: hostelId }).eq('id', announcement.id);

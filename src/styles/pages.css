@@ -11,7 +11,7 @@
   justify-content: center;
   min-height: 100vh;
   padding: 24px;
-  background: 
+  background:
     linear-gradient(var(--rule-blueprint) 1px, transparent 1px) 0 0 / 48px 48px,
     linear-gradient(90deg, var(--rule-blueprint) 1px, transparent 1px) 0 0 / 48px 48px,
     radial-gradient(60% 50% at 50% 25%, var(--color-paper-emit) 0%, transparent 65%),
@@ -179,4 +179,36 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* Layout and Utility Classes for Page Headers */
+.page-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.page-actions-container {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.page-description {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-danger-soft {
+  color: var(--color-danger);
+  border-color: rgba(224, 94, 82, 0.3);
 }

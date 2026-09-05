@@ -82,6 +82,42 @@ export function openModal(title, bodyHTML, onSubmit) {
   document.body.appendChild(overlay);
   document.body.style.overflow = 'hidden';
 
+  // Automatically link paired date inputs (e.g. from_date & to_date)
+  const fromDateInput = form.querySelector('input[name="from_date"], input[name="start_date"]');
+  const toDateInput = form.querySelector('input[name="to_date"], input[name="end_date"]');
+  if (fromDateInput && toDateInput) {
+    const handleFromChange = () => {
+      if (fromDateInput.value) {
+        toDateInput.min = fromDateInput.value;
+        if (toDateInput.value && toDateInput.value < fromDateInput.value) {
+          toDateInput.value = fromDateInput.value;
+        }
+      }
+    };
+    fromDateInput.addEventListener('change', handleFromChange);
+    fromDateInput.addEventListener('input', handleFromChange);
+
+    toDateInput.addEventListener('change', () => {
+      if (fromDateInput.value && toDateInput.value && toDateInput.value < fromDateInput.value) {
+        showToast('To Date cannot be earlier than From Date', 'warning');
+        toDateInput.value = fromDateInput.value;
+      }
+    });
+
+    // Run initial sync if fromDate has value
+    if (fromDateInput.value) {
+      toDateInput.min = fromDateInput.value;
+    }
+  }
+
+  if (typeof onMount === 'function') {
+    try {
+      onMount(form, content);
+    } catch (e) {
+      console.error('[Modal onMount error]', e);
+    }
+  }
+
   // Trigger motion.dev spring animation
   animateModalIn(overlay, content);
   

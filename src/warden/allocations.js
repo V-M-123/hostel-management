@@ -2,14 +2,16 @@ import { supabase } from '../supabaseClient.js';
 import { showToast } from '../components/toast.js';
 import { renderTable } from '../components/table.js';
 import { openModal, closeModal } from '../components/modal.js';
-import { createIcon } from '../utils/icons.js';
+import { createPageLayout } from '../components/layout.js';
+import { createStatusBadge } from '../components/ui.js';
+import { formatDateForDB, formatDateForUI } from '../utils/date.js';
+import { vacateAllocation } from '../utils/db.js';
 
 export async function render(container) {
   container.innerHTML = '';
-  
+
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Find all hostels assigned to this warden (from hostels and hostel_wardens)
   const [{ data: directHostels }, { data: junctionHostels }] = await Promise.all([
     supabase.from('hostels').select('id, name').eq('warden_id', user.id),
     supabase.from('hostel_wardens').select('hostel:hostel_id(id, name)').eq('warden_id', user.id)
@@ -35,28 +37,9 @@ export async function render(container) {
   }
 
   const hostelIds = assignedHostels.map(h => h.id);
-  const primaryHostel = assignedHostels[0];
 
-  const header = document.createElement('div');
-  header.className = 'page-header';
-  header.style.display = 'flex';
-  header.style.justifyContent = 'space-between';
-  header.style.alignItems = 'flex-start';
-  header.style.flexWrap = 'wrap';
-  header.style.gap = '16px';
-
-  header.innerHTML = `
-    <div>
-      <h1 class="page-title">Room Allocations</h1>
-      <p style="color: var(--text-secondary); font-size: 14px;">Managing ${assignedHostels.map(h => h.name).join(', ')}</p>
-    </div>
-  `;
-
-  const actions = document.createElement('div');
-  actions.className = 'page-actions';
-  actions.style.display = 'flex';
-  actions.style.gap = '10px';
-  actions.style.alignItems = 'center';
+  const actionsContainer = document.createElement('div');
+  actionsContainer.className = 'page-actions-container';
 
   const randomBtn = document.createElement('button');
   randomBtn.className = 'btn btn-secondary';
@@ -68,10 +51,14 @@ export async function render(container) {
   newBtn.textContent = 'Allocate Student';
   newBtn.onclick = () => openAllocationModal();
 
-  actions.appendChild(randomBtn);
-  actions.appendChild(newBtn);
-  header.appendChild(actions);
-  container.appendChild(header);
+  actionsContainer.appendChild(randomBtn);
+  actionsContainer.appendChild(newBtn);
+
+  createPageLayout(container, {
+    title: 'Room Allocations',
+    description: `Managing ${assignedHostels.map(h => h.name).join(', ')}`,
+    actions: [actionsContainer]
+  });
 
   const tableContainer = document.createElement('div');
   container.appendChild(tableContainer);
@@ -92,40 +79,21 @@ export async function render(container) {
         { key: 'phone', label: 'Phone', render: (val, row) => row.student?.phone || 'N/A' },
         { key: 'hostel', label: 'Hostel Block', render: (val, row) => row.room?.hostel?.name || 'Block' },
         { key: 'room', label: 'Room', render: (val, row) => `Room ${row.room?.room_number || 'N/A'} (Floor ${row.room?.floor})` },
-        { key: 'allocated_date', label: 'Allocated Date', render: (val) => val ? new Date(val).toLocaleDateString() : 'N/A' },
-        { key: 'status', label: 'Status', render: (val, row) => {
-            const statusClass = row.status === 'active' ? 'status-active' : 'status-vacated';
-            const badge = document.createElement('span');
-            badge.className = `status-badge ${statusClass}`;
-            badge.textContent = row.status ? row.status.toUpperCase() : 'UNKNOWN';
-            return badge;
-        }}
+        { key: 'allocated_date', label: 'Allocated Date', render: (val) => formatDateForUI(val) },
+        { key: 'status', label: 'Status', render: (val, row) => createStatusBadge(row.status) }
       ],
       rows: data,
       actions: [
-        { 
-          label: 'Vacate', 
-          class: 'btn btn-sm btn-danger', 
+        {
+          label: 'Vacate',
+          class: 'btn btn-sm btn-danger',
           onClick: async (row) => {
             if (row.status === 'vacated') {
               showToast('This allocation is already vacated', 'info');
               return;
             }
             if (confirm(`Vacate ${row.student?.full_name || 'student'} from Room ${row.room?.room_number}?`)) {
-              const vacatedDate = new Date().toISOString().split('T')[0];
-              let { error } = await supabase
-                .from('room_allocations')
-                .update({ status: 'vacated', vacated_date: vacatedDate })
-                .eq('id', row.id);
-
-              if (error && error.message && (error.message.includes('vacated_date') || error.message.includes('column'))) {
-                const fallback = await supabase
-                  .from('room_allocations')
-                  .update({ status: 'vacated' })
-                  .eq('id', row.id);
-                error = fallback.error;
-              }
-
+              const { error } = await vacateAllocation(row.id);
               if (error) {
                 showToast(error.message, 'error');
               } else {
@@ -140,11 +108,7 @@ export async function render(container) {
     });
   };
 
-  /**
-   * Manual Single Allocation Modal
-   */
   const openAllocationModal = async () => {
-    // 1. Get rooms in assigned hostels
     const { data: rooms, error: rError } = await supabase
       .from('rooms')
       .select('*, hostel:hostel_id(name)')
@@ -152,24 +116,22 @@ export async function render(container) {
       .order('room_number');
 
     if (rError) { showToast(rError.message, 'error'); return; }
-    
+
     const availableRooms = rooms.filter(r => (r.occupied_count || 0) < r.capacity);
     if (availableRooms.length === 0) {
       showToast('No rooms with available capacity in your assigned blocks.', 'error');
       return;
     }
 
-    // 2. Get students
     const { data: students, error: sError } = await supabase.from('profiles').select('id, full_name').eq('role', 'student');
     if (sError) { showToast(sError.message, 'error'); return; }
 
-    // 3. Filter out currently active students
     const { data: activeAllocs, error: aError } = await supabase.from('room_allocations').select('student_id').eq('status', 'active');
     if (aError) { showToast(aError.message, 'error'); return; }
-    
+
     const activeStudentIds = new Set(activeAllocs.map(a => a.student_id));
     const availableStudents = students.filter(s => !activeStudentIds.has(s.id));
-    
+
     if (availableStudents.length === 0) {
       showToast('All registered students are currently allocated', 'info');
       return;
@@ -196,12 +158,12 @@ export async function render(container) {
     openModal('Allocate Room', bodyHTML, async (formData) => {
       const student_id = formData.get('student_id');
       const room_id = formData.get('room_id');
-      
-      const { error } = await supabase.from('room_allocations').insert({ 
-        room_id, 
-        student_id, 
+
+      const { error } = await supabase.from('room_allocations').insert({
+        room_id,
+        student_id,
         status: 'active',
-        allocated_date: new Date().toISOString().split('T')[0]
+        allocated_date: formatDateForDB()
       });
 
       if (error) {
@@ -214,11 +176,7 @@ export async function render(container) {
     });
   };
 
-  /**
-   * Warden Random Room Allocation (Capacity-Aware)
-   */
   const openWardenRandomAllocationModal = async () => {
-    // 1. Fetch available rooms in assigned hostels
     const { data: rooms, error: rError } = await supabase
       .from('rooms')
       .select('id, hostel_id, room_number, floor, capacity, occupied_count')
@@ -234,7 +192,6 @@ export async function render(container) {
       return;
     }
 
-    // 2. Fetch unallocated students
     const [{ data: students }, { data: activeAllocs }] = await Promise.all([
       supabase.from('profiles').select('id, full_name').eq('role', 'student'),
       supabase.from('room_allocations').select('student_id').eq('status', 'active')
@@ -272,7 +229,6 @@ export async function render(container) {
     openModal('Auto-Allocate to Your Block', bodyHTML, async (formData) => {
       const count = parseInt(formData.get('count'), 10) || Math.min(unallocated.length, totalSlots);
 
-      // Build slot pool
       const slotPool = [];
       availableRooms.forEach(r => {
         const free = r.capacity - (r.occupied_count || 0);
@@ -281,13 +237,11 @@ export async function render(container) {
         }
       });
 
-      // Fisher-Yates shuffle slotPool
       for (let i = slotPool.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [slotPool[i], slotPool[j]] = [slotPool[j], slotPool[i]];
       }
 
-      // Fisher-Yates shuffle unallocated
       const studentPool = [...unallocated];
       for (let i = studentPool.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -296,7 +250,7 @@ export async function render(container) {
 
       const toAllocate = Math.min(count, slotPool.length, studentPool.length);
       const records = [];
-      const today = new Date().toISOString().split('T')[0];
+      const today = formatDateForDB();
 
       for (let i = 0; i < toAllocate; i++) {
         records.push({

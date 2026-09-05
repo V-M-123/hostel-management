@@ -116,26 +116,27 @@ export async function render(container) {
   ];
 
   actions.forEach(a => {
-    const card = document.createElement('div');
-    card.className = 'action-card glass-panel';
-    const iconDiv = document.createElement('div');
-    iconDiv.className = 'action-icon';
-    iconDiv.appendChild(createIcon(a.iconName, { size: 18, strokeWidth: 2 }));
+    const btn = document.createElement('button');
+    btn.className = 'action-btn';
+    btn.type = 'button';
 
-    const lblDiv = document.createElement('div');
-    lblDiv.className = 'action-label';
-    lblDiv.textContent = a.label;
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'action-icon';
+    iconSpan.appendChild(createIcon(a.iconName, { size: 15, strokeWidth: 2 }));
 
-    card.append(iconDiv, lblDiv);
-    card.onclick = () => navigateTo(a.path);
-    quickActions.appendChild(card);
+    const lblSpan = document.createElement('span');
+    lblSpan.className = 'action-label';
+    lblSpan.textContent = a.label;
+
+    btn.append(iconSpan, lblSpan);
+    btn.onclick = () => navigateTo(a.path);
+    quickActions.appendChild(btn);
   });
 
   linksSection.appendChild(quickActions);
   container.appendChild(linksSection);
 
   animateStaggerCards(statsGrid, '.stat-card');
-  animateStaggerCards(quickActions, '.action-card');
 
   // 3. Notice Board (Latest Announcement)
   const noticeSection = document.createElement('div');

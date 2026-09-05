@@ -6,21 +6,19 @@ import { navigateTo } from '../router.js';
 import { filterComplaints } from '../utils/complaintsFilter.js';
 import { animateStaggerCards } from '../utils/motionTransitions.js';
 import { createIcon } from '../utils/icons.js';
+import { createPageLayout } from '../components/layout.js';
+import { createStatusBadge } from '../components/ui.js';
+import { formatDateForUI } from '../utils/date.js';
 
 export async function render(container) {
   container.innerHTML = '';
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  const header = document.createElement('div');
-  header.className = 'page-header';
-  header.innerHTML = `
-    <div>
-      <h1 class="page-title">Admin Dashboard</h1>
-      <p style="color: var(--text-secondary); font-size: 14px;">Welcome back, ${user?.full_name || 'Administrator'}</p>
-    </div>
-  `;
-  container.appendChild(header);
+  createPageLayout(container, {
+    title: 'Welcome',
+    description: ''//`Welcome back, ${user?.full_name || 'Administrator'}`
+  });
 
   // 1. System Overview Section
   const overviewSection = document.createElement('div');
@@ -32,7 +30,6 @@ export async function render(container) {
   if (!statsError && rpcStats) {
     stats = rpcStats;
   } else {
-    // Client-side fallback stats calculation
     try {
       const [{ data: hostels }, { data: rooms }, { data: complaints }] = await Promise.all([
         supabase.from('hostels').select('id'),
@@ -76,7 +73,7 @@ export async function render(container) {
   cardData.forEach(c => {
     const card = document.createElement('div');
     card.className = 'stat-card glass-panel';
-    
+
     const iconDiv = document.createElement('div');
     iconDiv.className = 'stat-icon';
     iconDiv.appendChild(createIcon(c.iconName, { size: 18, strokeWidth: 2 }));
@@ -114,27 +111,27 @@ export async function render(container) {
   ];
 
   actions.forEach(a => {
-    const card = document.createElement('div');
-    card.className = 'action-card glass-panel';
-    
-    const iconDiv = document.createElement('div');
-    iconDiv.className = 'action-icon';
-    iconDiv.appendChild(createIcon(a.iconName, { size: 18, strokeWidth: 2 }));
+    const btn = document.createElement('button');
+    btn.className = 'action-btn';
+    btn.type = 'button';
 
-    const lblDiv = document.createElement('div');
-    lblDiv.className = 'action-label';
-    lblDiv.textContent = a.label;
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'action-icon';
+    iconSpan.appendChild(createIcon(a.iconName, { size: 15, strokeWidth: 2 }));
 
-    card.append(iconDiv, lblDiv);
-    card.onclick = () => navigateTo(a.path);
-    quickActions.appendChild(card);
+    const lblSpan = document.createElement('span');
+    lblSpan.className = 'action-label';
+    lblSpan.textContent = a.label;
+
+    btn.append(iconSpan, lblSpan);
+    btn.onclick = () => navigateTo(a.path);
+    quickActions.appendChild(btn);
   });
 
   shortcutsSection.appendChild(quickActions);
   container.appendChild(shortcutsSection);
 
   animateStaggerCards(statsGrid, '.stat-card');
-  animateStaggerCards(quickActions, '.action-card');
 
   // 3. Operational Overview (Recent Complaints)
   const operationalSection = document.createElement('div');
@@ -163,13 +160,8 @@ export async function render(container) {
       { key: 'student', label: 'Student', render: (val, row) => row.student?.full_name || 'N/A' },
       { key: 'room', label: 'Location', render: (val, row) => `${row.room?.hostel?.name || 'Block'} — Room ${row.room?.room_number || '-'}` },
       { key: 'category', label: 'Category', render: (val) => val.toUpperCase() },
-      { key: 'status', label: 'Status', render: (val) => {
-          const span = document.createElement('span');
-          span.className = `status-badge status-${val}`;
-          span.textContent = val.toUpperCase().replace('_', ' ');
-          return span;
-      }},
-      { key: 'created_at', label: 'Reported', render: (val) => new Date(val).toLocaleDateString() }
+      { key: 'status', label: 'Status', render: (val) => createStatusBadge(val) },
+      { key: 'created_at', label: 'Reported', render: (val) => formatDateForUI(val) }
     ],
     rows: activeComplaints,
     emptyMessage: 'No active complaints logged'

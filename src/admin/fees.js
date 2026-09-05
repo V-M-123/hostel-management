@@ -2,31 +2,31 @@ import { supabase } from '../supabaseClient.js';
 import { showToast } from '../components/toast.js';
 import { renderTable } from '../components/table.js';
 import { openModal, closeModal } from '../components/modal.js';
+import { createPageLayout } from '../components/layout.js';
+import { createStatusBadge } from '../components/ui.js';
+import { formatDateForDB, formatDateForUI } from '../utils/date.js';
 
 export async function render(container) {
   container.innerHTML = '';
-  
-  const header = document.createElement('div');
-  header.className = 'page-header';
-  const title = document.createElement('h1');
-  title.className = 'page-title';
-  title.textContent = 'Fee Reports & Payments';
-  header.appendChild(title);
 
-  const actions = document.createElement('div');
-  actions.className = 'page-actions';
+  const actionsContainer = document.createElement('div');
+  actionsContainer.className = 'page-actions-container';
+
   const recordBtn = document.createElement('button');
   recordBtn.className = 'btn btn-primary';
   recordBtn.textContent = '+ Record Fee';
   recordBtn.onclick = () => openRecordFeeModal();
-  actions.appendChild(recordBtn);
-  header.appendChild(actions);
-  container.appendChild(header);
+  actionsContainer.appendChild(recordBtn);
+
+  createPageLayout(container, {
+    title: 'Fee Reports & Payments',
+    actions: [actionsContainer]
+  });
 
   const filterBar = document.createElement('div');
   filterBar.className = 'filter-bar';
   filterBar.style.marginBottom = '20px';
-  
+
   const statusGroup = document.createElement('div');
   statusGroup.className = 'filter-group';
   statusGroup.innerHTML = `
@@ -48,11 +48,11 @@ export async function render(container) {
   const loadData = async () => {
     tableContainer.innerHTML = '';
     const statusFilter = document.getElementById('statusFilter').value;
-    
+
     let query = supabase
       .from('fee_payments')
       .select('*, student:student_id(full_name, phone), recorder:recorded_by(full_name)');
-      
+
     if (statusFilter === 'unpaid') {
       query = query.neq('status', 'paid');
     } else if (statusFilter !== 'all') {
@@ -63,7 +63,6 @@ export async function render(container) {
     let { data: resData, error } = await query.order('due_date', { ascending: false });
 
     if (error) {
-      // Fallback without recorder join
       let fallbackQuery = supabase
         .from('fee_payments')
         .select('*, student:student_id(full_name, phone)');
@@ -86,41 +85,36 @@ export async function render(container) {
       columns: [
         { key: 'student', label: 'Student', render: (val, row) => row.student?.full_name || 'Unknown' },
         { key: 'amount', label: 'Amount', render: (val, row) => `₹${Number(row.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` },
-        { key: 'due_date', label: 'Due Date', render: (val, row) => row.due_date ? new Date(row.due_date).toLocaleDateString() : '-' },
+        { key: 'due_date', label: 'Due Date', render: (val) => formatDateForUI(val) },
         { key: 'paid_date', label: 'Paid Date', render: (val, row) => {
             if (row.paid_date) {
               const span = document.createElement('span');
               span.style.color = 'var(--color-acid-yellow)';
               span.style.fontWeight = '500';
-              span.textContent = new Date(row.paid_date).toLocaleDateString();
+              span.textContent = formatDateForUI(row.paid_date);
               return span;
             }
             return '-';
         }},
-        { key: 'status', label: 'Status', render: (val, row) => {
-            const badge = document.createElement('span');
-            badge.className = `status-badge status-${row.status}`;
-            badge.textContent = row.status.toUpperCase();
-            return badge;
-        }},
+        { key: 'status', label: 'Status', render: (val) => createStatusBadge(val) },
         { key: 'recorder', label: 'Recorded By', render: (val, row) => row.recorder?.full_name || 'Admin' }
       ],
       rows: data,
       actions: [
-        { 
-          label: 'Mark Paid', 
+        {
+          label: 'Mark Paid',
           class: 'btn btn-sm btn-primary',
           show: (row) => row.status !== 'paid',
           onClick: (row) => openMarkPaidModal(row)
         },
-        { 
-          label: 'Edit', 
-          class: 'btn btn-sm btn-secondary', 
-          onClick: (row) => editFee(row) 
+        {
+          label: 'Edit',
+          class: 'btn btn-sm btn-secondary',
+          onClick: (row) => editFee(row)
         },
-        { 
-          label: 'Delete', 
-          class: 'btn btn-sm btn-danger', 
+        {
+          label: 'Delete',
+          class: 'btn btn-sm btn-danger',
           onClick: async (row) => {
             if (confirm(`Delete fee payment record of ₹${Number(row.amount).toFixed(2)} for ${row.student?.full_name || 'student'}?`)) {
               const { error } = await supabase.from('fee_payments').delete().eq('id', row.id);
@@ -136,15 +130,12 @@ export async function render(container) {
 
   document.getElementById('statusFilter').addEventListener('change', loadData);
 
-  /**
-   * Quick Mark Paid Modal
-   */
   const openMarkPaidModal = (row) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = formatDateForDB();
     const bodyHTML = `
       <div style="margin-bottom: 16px; background: rgba(209, 254, 23, 0.05); border: 1px solid rgba(209, 254, 23, 0.2); border-radius: var(--radius-sm); padding: 12px 14px;">
         <div style="font-size: 13px; color: var(--text-primary); margin-bottom: 4px;"><strong>Student:</strong> ${row.student?.full_name || 'Student'}</div>
-        <div style="font-size: 13px; color: var(--text-primary);"><strong>Amount:</strong> ₹${Number(row.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+        <div style="font-size: 13px; color: var(--text-primary;"><strong>Amount:</strong> ₹${Number(row.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
       </div>
       <div class="form-group">
         <label class="form-label">Payment / Paid Date</label>
@@ -157,9 +148,9 @@ export async function render(container) {
       const paidDate = formData.get('paid_date') || today;
       let { error } = await supabase
         .from('fee_payments')
-        .update({ 
-          status: 'paid', 
-          paid_date: paidDate 
+        .update({
+          status: 'paid',
+          paid_date: paidDate
         })
         .eq('id', row.id);
 
@@ -174,21 +165,18 @@ export async function render(container) {
       if (error) {
         showToast(error.message, 'error');
       } else {
-        showToast(`Fee marked as paid on ${new Date(paidDate).toLocaleDateString()}!`, 'success');
+        showToast(`Fee marked as paid on ${formatDateForUI(paidDate)}!`, 'success');
         closeModal();
         await loadData();
       }
     });
   };
 
-  /**
-   * Record Fee Modal with dynamic Paid Date input
-   */
   const openRecordFeeModal = async () => {
     const { data: students, error: sError } = await supabase.from('profiles').select('id, full_name').eq('role', 'student').order('full_name');
     if (sError) { showToast(sError.message, 'error'); return; }
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = formatDateForDB();
     let studentOptions = students.map(s => `<option value="${s.id}">${s.full_name}</option>`).join('');
 
     const bodyHTML = `
@@ -227,7 +215,7 @@ export async function render(container) {
       const dueDate = formData.get('due_date');
       const status = formData.get('status');
       const paidDate = status === 'paid' ? (formData.get('paid_date') || today) : null;
-      
+
       const { data: { user } } = await supabase.auth.getUser();
 
       let { error } = await supabase
@@ -240,7 +228,7 @@ export async function render(container) {
           paid_date: paidDate,
           recorded_by: user.id
         });
-      
+
       if (error && error.message && (error.message.includes('paid_date') || error.message.includes('column'))) {
         const fallback = await supabase
           .from('fee_payments')
@@ -263,7 +251,6 @@ export async function render(container) {
       }
     });
 
-    // Auto-toggle Paid Date input on status change
     setTimeout(() => {
       const statusSelect = document.getElementById('new-fee-status');
       const paidDateGroup = document.getElementById('paid-date-group');
@@ -275,11 +262,8 @@ export async function render(container) {
     }, 50);
   };
 
-  /**
-   * Edit Fee Modal with Paid Date updations
-   */
   const editFee = (row) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = formatDateForDB();
     const currentPaidDate = row.paid_date ? row.paid_date.split('T')[0] : '';
 
     const bodyHTML = `
@@ -317,24 +301,24 @@ export async function render(container) {
       } else if (status !== 'paid') {
         paidDate = null;
       }
-      
+
       let { error } = await supabase
         .from('fee_payments')
-        .update({ 
+        .update({
           amount,
           due_date: dueDate,
-          status, 
-          paid_date: paidDate 
+          status,
+          paid_date: paidDate
         })
         .eq('id', row.id);
-      
+
       if (error && error.message && (error.message.includes('paid_date') || error.message.includes('column'))) {
         const fallback = await supabase
           .from('fee_payments')
-          .update({ 
+          .update({
             amount,
             due_date: dueDate,
-            status 
+            status
           })
           .eq('id', row.id);
         error = fallback.error;
@@ -349,7 +333,6 @@ export async function render(container) {
       }
     });
 
-    // Dynamic show/hide and auto-preset paid date
     setTimeout(() => {
       const statusSelect = document.getElementById('edit-fee-status');
       const paidDateGroup = document.getElementById('edit-paid-date-group');

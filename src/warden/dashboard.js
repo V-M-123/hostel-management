@@ -134,32 +134,33 @@ export async function render(container) {
   ];
 
   actions.forEach(a => {
-    const card = document.createElement('div');
-    card.className = 'action-card glass-panel';
+    const btn = document.createElement('button');
+    btn.className = 'action-btn';
+    btn.type = 'button';
     
-    const iconDiv = document.createElement('div');
-    iconDiv.className = 'action-icon';
-    iconDiv.appendChild(createIcon(a.iconName, { size: 18, strokeWidth: 2 }));
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'action-icon';
+    iconSpan.appendChild(createIcon(a.iconName, { size: 15, strokeWidth: 2 }));
 
-    const lblDiv = document.createElement('div');
-    lblDiv.className = 'action-label';
-    lblDiv.textContent = a.label;
-    if (a.count !== undefined) {
+    const lblSpan = document.createElement('span');
+    lblSpan.className = 'action-label';
+    lblSpan.textContent = a.label;
+
+    btn.append(iconSpan, lblSpan);
+
+    if (a.count !== undefined && a.count > 0) {
       const badge = document.createElement('span');
-      badge.className = 'badge badge-warden';
-      badge.style.marginLeft = '6px';
-      badge.textContent = a.count || 0;
-      lblDiv.appendChild(badge);
+      badge.className = 'action-badge';
+      badge.textContent = a.count;
+      btn.appendChild(badge);
     }
 
-    card.append(iconDiv, lblDiv);
-    card.onclick = () => navigateTo(a.path);
-    quickActions.appendChild(card);
+    btn.onclick = () => navigateTo(a.path);
+    quickActions.appendChild(btn);
   });
 
   actionsSection.appendChild(quickActions);
   container.appendChild(actionsSection);
 
   animateStaggerCards(statsGrid, '.stat-card');
-  animateStaggerCards(quickActions, '.action-card');
 }

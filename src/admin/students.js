@@ -3,30 +3,16 @@ import { showToast } from '../components/toast.js';
 import { renderTable } from '../components/table.js';
 import { renderEmptyState } from '../components/emptyState.js';
 import { openModal, closeModal } from '../components/modal.js';
+import { createPageLayout } from '../components/layout.js';
+import { createStatusBadge } from '../components/ui.js';
+import { formatDateForDB, formatDateForUI } from '../utils/date.js';
+import { vacateAllocation } from '../utils/db.js';
 
 export async function render(container) {
   container.innerHTML = '';
 
-  const header = document.createElement('div');
-  header.className = 'page-header';
-  header.style.display = 'flex';
-  header.style.justifyContent = 'space-between';
-  header.style.alignItems = 'flex-start';
-  header.style.flexWrap = 'wrap';
-  header.style.gap = '16px';
-
-  header.innerHTML = `
-    <div>
-      <h1 class="page-title">Student Directory</h1>
-      <p style="color: var(--text-secondary); font-size: 14px;">Campus-wide student registrations, data management, and capacity-aware room allocation</p>
-    </div>
-  `;
-
   const actionsContainer = document.createElement('div');
-  actionsContainer.style.display = 'flex';
-  actionsContainer.style.gap = '10px';
-  actionsContainer.style.alignItems = 'center';
-  actionsContainer.style.flexWrap = 'wrap';
+  actionsContainer.className = 'page-actions-container';
 
   const searchInput = document.createElement('input');
   searchInput.type = 'text';
@@ -35,9 +21,7 @@ export async function render(container) {
   searchInput.style.width = '240px';
 
   const deallocBtn = document.createElement('button');
-  deallocBtn.className = 'btn btn-secondary';
-  deallocBtn.style.color = '#f87171';
-  deallocBtn.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+  deallocBtn.className = 'btn btn-secondary btn-danger-soft';
   deallocBtn.textContent = 'Deallocate';
   deallocBtn.onclick = () => openBulkDeallocationModal();
 
@@ -49,8 +33,12 @@ export async function render(container) {
   actionsContainer.appendChild(searchInput);
   actionsContainer.appendChild(deallocBtn);
   actionsContainer.appendChild(randomAllocBtn);
-  header.appendChild(actionsContainer);
-  container.appendChild(header);
+
+  createPageLayout(container, {
+    title: 'Student Directory',
+    description:'', //'Campus-wide student registrations, data management, and capacity-aware room allocation',
+    actions: [actionsContainer]
+  });
 
   const tableContainer = document.createElement('div');
   container.appendChild(tableContainer);
@@ -59,8 +47,7 @@ export async function render(container) {
 
   const loadData = async () => {
     tableContainer.innerHTML = '';
-    
-    // Fetch all profiles with student role and their active allocations
+
     const { data, error } = await supabase
       .from('profiles')
       .select(`
@@ -116,7 +103,7 @@ export async function render(container) {
 
   const renderFilteredTable = () => {
     const term = searchInput.value.toLowerCase().trim();
-    const filtered = allStudents.filter(s => 
+    const filtered = allStudents.filter(s =>
       s.full_name.toLowerCase().includes(term) ||
       s.phone.toLowerCase().includes(term) ||
       s.room.toLowerCase().includes(term) ||
@@ -136,13 +123,8 @@ export async function render(container) {
         { key: 'phone', label: 'Phone', render: (val) => val },
         { key: 'hostel', label: 'Hostel Block', render: (val) => val },
         { key: 'room', label: 'Room', render: (val, row) => `${val} (${row.floor})` },
-        { key: 'status', label: 'Status', render: (val) => {
-            const span = document.createElement('span');
-            span.className = `status-badge ${val === 'Allocated' ? 'status-active' : 'status-pending'}`;
-            span.textContent = val.toUpperCase();
-            return span;
-        }},
-        { key: 'allocated_date', label: 'Allocated Date', render: (val) => val }
+        { key: 'status', label: 'Status', render: (val) => createStatusBadge(val) },
+        { key: 'allocated_date', label: 'Allocated Date', render: (val) => formatDateForUI(val) }
       ],
       rows: filtered,
       actions: [
@@ -160,20 +142,7 @@ export async function render(container) {
               return;
             }
             if (confirm(`Deallocate ${row.full_name} from ${row.room} (${row.hostel})?`)) {
-              const vacatedDate = new Date().toISOString().split('T')[0];
-              let { error } = await supabase
-                .from('room_allocations')
-                .update({ status: 'vacated', vacated_date: vacatedDate })
-                .eq('id', row.allocation_id);
-
-              if (error && error.message && (error.message.includes('vacated_date') || error.message.includes('column'))) {
-                const fallback = await supabase
-                  .from('room_allocations')
-                  .update({ status: 'vacated' })
-                  .eq('id', row.allocation_id);
-                error = fallback.error;
-              }
-
+              const { error } = await vacateAllocation(row.allocation_id);
               if (error) {
                 showToast(error.message, 'error');
               } else {
@@ -188,9 +157,6 @@ export async function render(container) {
     });
   };
 
-  /**
-   * Bulk Deallocation Modal
-   */
   const openBulkDeallocationModal = async () => {
     const allocatedStudents = allStudents.filter(s => s.status === 'Allocated' && s.allocation_id);
 
@@ -259,11 +225,13 @@ export async function render(container) {
       }
 
       const targetAllocationIds = targets.map(s => s.allocation_id);
-      const vacatedDate = new Date().toISOString().split('T')[0];
+      const allocatedRecords = targetAllocationIds.map(id => ({ id, status: 'vacated', vacated_date: formatDateForDB() }));
 
+      // Bulk update requires custom logic or separate calls since Supabase .update() is global.
+      // For the purpose of this optimization, we'll keep the .update().in() pattern but use our date utility.
       let { error: deallocError } = await supabase
         .from('room_allocations')
-        .update({ status: 'vacated', vacated_date: vacatedDate })
+        .update({ status: 'vacated', vacated_date: formatDateForDB() })
         .in('id', targetAllocationIds);
 
       if (deallocError && deallocError.message && (deallocError.message.includes('vacated_date') || deallocError.message.includes('column'))) {
@@ -285,11 +253,7 @@ export async function render(container) {
     });
   };
 
-  /**
-   * Random Allocation Modal (Capacity & Room Size Aware)
-   */
   const openRandomAllocationModal = async () => {
-    // 1. Get currently unallocated students
     const unallocatedStudents = allStudents.filter(s => s.status === 'Pending');
 
     if (unallocatedStudents.length === 0) {
@@ -297,7 +261,6 @@ export async function render(container) {
       return;
     }
 
-    // 2. Fetch all hostels and rooms with capacities
     const [{ data: hostels }, { data: rooms }] = await Promise.all([
       supabase.from('hostels').select('id, name').order('name'),
       supabase.from('rooms').select('id, hostel_id, room_number, floor, capacity, occupied_count').order('room_number')
@@ -308,7 +271,6 @@ export async function render(container) {
       return;
     }
 
-    // Calculate total remaining slots across rooms (strictly based on room capacity)
     const availableRooms = rooms.filter(r => (r.capacity - (r.occupied_count || 0)) > 0);
     const totalAvailableSlots = availableRooms.reduce((acc, r) => acc + (r.capacity - (r.occupied_count || 0)), 0);
 
@@ -360,7 +322,6 @@ export async function render(container) {
       const strategy = formData.get('strategy') || 'random_scatter';
       const batchLimit = parseInt(formData.get('batch_limit'), 10) || unallocatedStudents.length;
 
-      // Filter eligible rooms by hostel selection
       let eligibleRooms = rooms.map(r => ({
         ...r,
         remaining_slots: r.capacity - (r.occupied_count || 0)
@@ -375,7 +336,6 @@ export async function render(container) {
         return;
       }
 
-      // Build available slots list based on room capacity
       let slotPool = [];
       eligibleRooms.forEach(room => {
         for (let i = 0; i < room.remaining_slots; i++) {
@@ -390,22 +350,17 @@ export async function render(container) {
         }
       });
 
-      // Apply strategy ordering
       if (strategy === 'fill_first') {
-        // Sort slots: rooms with existing occupants come first
         slotPool.sort((a, b) => b.occupied_count - a.occupied_count);
       } else if (strategy === 'balanced_floors') {
-        // Sort by floor alternation
         slotPool.sort((a, b) => (a.floor % 3) - (b.floor % 3));
       } else {
-        // Pure Random Shuffle of slots (Fisher-Yates)
         for (let i = slotPool.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [slotPool[i], slotPool[j]] = [slotPool[j], slotPool[i]];
         }
       }
 
-      // Shuffle students for unbiased random selection
       const studentsToAllocate = [...unallocatedStudents];
       for (let i = studentsToAllocate.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -414,7 +369,7 @@ export async function render(container) {
 
       const totalToAssign = Math.min(studentsToAllocate.length, slotPool.length, batchLimit);
       const allocatedRecords = [];
-      const today = new Date().toISOString().split('T')[0];
+      const today = formatDateForDB();
 
       for (let idx = 0; idx < totalToAssign; idx++) {
         allocatedRecords.push({
@@ -425,7 +380,6 @@ export async function render(container) {
         });
       }
 
-      // Batch insert allocations
       const { error: allocError } = await supabase
         .from('room_allocations')
         .insert(allocatedRecords);
@@ -441,11 +395,7 @@ export async function render(container) {
     });
   };
 
-  /**
-   * Edit Student Modal
-   */
   const openEditStudentModal = async (student) => {
-    // Fetch available rooms across all hostels
     const { data: rooms } = await supabase
       .from('rooms')
       .select('id, room_number, floor, capacity, occupied_count, hostel:hostel_id(name)')
@@ -492,7 +442,6 @@ export async function render(container) {
       const phone = formData.get('phone');
       const new_room_id = formData.get('room_id') || null;
 
-      // 1. Update Profile Information
       const { error: pError } = await supabase
         .from('profiles')
         .update({ full_name, phone })
@@ -503,32 +452,22 @@ export async function render(container) {
         return;
       }
 
-      // 2. Handle Room Allocation Changes
       if (new_room_id !== student.room_id) {
         if (student.allocation_id) {
-          // Vacate current allocation
-          let { error: vError } = await supabase
-            .from('room_allocations')
-            .update({ status: 'vacated', vacated_date: new Date().toISOString().split('T')[0] })
-            .eq('id', student.allocation_id);
-
-          if (vError && vError.message && (vError.message.includes('vacated_date') || vError.message.includes('column'))) {
-            await supabase
-              .from('room_allocations')
-              .update({ status: 'vacated' })
-              .eq('id', student.allocation_id);
+          const { error: vError } = await vacateAllocation(student.allocation_id);
+          if (vError) {
+            showToast('Error vacating room: ' + vError.message, 'error');
           }
         }
 
         if (new_room_id) {
-          // Create new allocation
           const { error: aError } = await supabase
             .from('room_allocations')
             .insert({
               student_id: student.id,
               room_id: new_room_id,
               status: 'active',
-              allocated_date: new Date().toISOString().split('T')[0]
+              allocated_date: formatDateForDB()
             });
 
           if (aError) {
@@ -545,7 +484,6 @@ export async function render(container) {
       await loadData();
     });
 
-    // Auto-pick random room event listener
     setTimeout(() => {
       const autoPickBtn = document.getElementById('auto-pick-room-btn');
       const roomSelect = document.getElementById('edit-room-select');

@@ -1,17 +1,16 @@
 import { supabase } from '../supabaseClient.js';
 import { showToast } from '../components/toast.js';
 import { renderTable } from '../components/table.js';
+import { createPageLayout } from '../components/layout.js';
+import { createStatusBadge } from '../components/ui.js';
+import { formatDateForUI } from '../utils/date.js';
 
 export async function render(container) {
   container.innerHTML = '';
 
-  const header = document.createElement('div');
-  header.className = 'page-header';
-  const title = document.createElement('h1');
-  title.className = 'page-title';
-  title.textContent = 'Fee Status';
-  header.appendChild(title);
-  container.appendChild(header);
+  createPageLayout(container, {
+    title: 'Fee Status'
+  });
 
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) { showToast('Authentication error', 'error'); return; }
@@ -61,6 +60,7 @@ export async function render(container) {
   container.appendChild(cardsGrid);
 
   const filterBar = document.createElement('div');
+  filterBar.className = 'filter-bar';
   filterBar.style.marginBottom = '16px';
   filterBar.innerHTML = `
     <select id="studentFeeFilter" class="form-select" style="width: auto; display: inline-block;">
@@ -79,9 +79,9 @@ export async function render(container) {
   const renderFeeTable = () => {
     tableContainer.innerHTML = '';
     const filter = document.getElementById('studentFeeFilter').value;
-    
+
     const filtered = allFees.filter(f => {
-      if (filter === 'unpaid') return f.status !== 'paid'; // Don't show paid fees
+      if (filter === 'unpaid') return f.status !== 'paid';
       if (filter === 'all') return true;
       return f.status === filter;
     });
@@ -89,14 +89,9 @@ export async function render(container) {
     renderTable(tableContainer, {
       columns: [
         { key: 'amount', label: 'Amount', render: (val) => `₹${Number(val).toFixed(2)}` },
-        { key: 'due_date', label: 'Due Date', render: (val) => val ? new Date(val).toLocaleDateString() : '-' },
-        { key: 'paid_date', label: 'Paid Date', render: (val) => val ? new Date(val).toLocaleDateString() : '-' },
-        { key: 'status', label: 'Status', render: (val) => {
-            const span = document.createElement('span');
-            span.className = `status-badge status-${val}`;
-            span.textContent = val.toUpperCase();
-            return span;
-        }}
+        { key: 'due_date', label: 'Due Date', render: (val) => formatDateForUI(val) },
+        { key: 'paid_date', label: 'Paid Date', render: (val) => formatDateForUI(val) },
+        { key: 'status', label: 'Status', render: (val) => createStatusBadge(val) }
       ],
       rows: filtered || [],
       emptyMessage: 'No outstanding fees pending.'

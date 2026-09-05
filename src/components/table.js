@@ -23,7 +23,8 @@ export function renderTable(container, options) {
   });
   if (actions && actions.length > 0) {
     const thActions = document.createElement('th');
-    thActions.textContent = 'Actions';
+    thActions.className = 'th-actions';
+    thActions.textContent = 'ACTIONS';
     trHead.appendChild(thActions);
   }
   thead.appendChild(trHead);
@@ -52,7 +53,10 @@ export function renderTable(container, options) {
     
     if (actions && actions.length > 0) {
       const tdActions = document.createElement('td');
-      tdActions.style.whiteSpace = 'nowrap';
+      tdActions.className = 'td-actions';
+      const wrapper = document.createElement('div');
+      wrapper.className = 'table-actions-wrapper';
+      
       actions.forEach(action => {
         if (typeof action.show === 'function' && !action.show(row)) {
           return;
@@ -62,7 +66,6 @@ export function renderTable(container, options) {
         }
         const btn = document.createElement('button');
         btn.className = `btn btn-sm ${action.class || 'btn-secondary'}`;
-        btn.style.marginRight = '8px';
         btn.textContent = action.label;
         btn.addEventListener('click', async (e) => {
           e.preventDefault();
@@ -76,8 +79,9 @@ export function renderTable(container, options) {
             btn.disabled = false;
           }
         });
-        tdActions.appendChild(btn);
+        wrapper.appendChild(btn);
       });
+      tdActions.appendChild(wrapper);
       tr.appendChild(tdActions);
     }
     

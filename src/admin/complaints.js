@@ -4,23 +4,15 @@ import { renderTable } from '../components/table.js';
 import { renderEmptyState } from '../components/emptyState.js';
 import { openModal, closeModal } from '../components/modal.js';
 import { filterComplaints } from '../utils/complaintsFilter.js';
+import { createPageLayout } from '../components/layout.js';
+import { createStatusBadge } from '../components/ui.js';
+import { formatDateForUI } from '../utils/date.js';
 
 export async function render(container) {
   container.innerHTML = '';
 
-  const header = document.createElement('div');
-  header.className = 'page-header';
-  header.innerHTML = `
-    <div>
-      <h1 class="page-title">Complaint Logs</h1>
-      <p style="color: var(--text-secondary); font-size: 14px;">Active campus issues (resolved issues auto-expire after 10 days)</p>
-    </div>
-  `;
-
   const filterContainer = document.createElement('div');
-  filterContainer.style.display = 'flex';
-  filterContainer.style.gap = '10px';
-  filterContainer.style.alignItems = 'left';
+  filterContainer.className = 'page-actions-container';
 
   const categoryFilter = document.createElement('select');
   categoryFilter.className = 'form-select';
@@ -45,8 +37,12 @@ export async function render(container) {
   `;
 
   filterContainer.append(categoryFilter, statusFilter);
-  header.appendChild(filterContainer);
-  container.appendChild(header);
+
+  createPageLayout(container, {
+    title: 'Complaint Logs',
+    description: 'Active campus issues (resolved issues auto-expire after 10 days)',
+    actions: [filterContainer]
+  });
 
   const tableContainer = document.createElement('div');
   container.appendChild(tableContainer);
@@ -102,15 +98,9 @@ export async function render(container) {
         }},
         { key: 'description', label: 'Description', render: (val) => val },
         { key: 'student', label: 'Student', render: (val, row) => `${row.student?.full_name || 'Anonymous'}`},
-        //(${row.student?.phone || 'No phone'})` },
         { key: 'location', label: 'Location', render: (val, row) => `${row.room?.hostel?.name || 'Block'} — Room ${row.room?.room_number || '-'}` },
-        { key: 'status', label: 'Status', render: (val) => {
-            const span = document.createElement('span');
-            span.className = `status-badge status-${val}`;
-            span.textContent = val.toUpperCase().replace('_', ' ');
-            return span;
-        }},
-        { key: 'created_at', label: 'Logged At', render: (val) => new Date(val).toLocaleDateString() }
+        { key: 'status', label: 'Status', render: (val) => createStatusBadge(val) },
+        { key: 'created_at', label: 'Logged At', render: (val) => formatDateForUI(val) }
       ],
       rows: filtered,
       actions: [
@@ -141,8 +131,7 @@ export async function render(container) {
 
     openModal('Update Complaint Status', bodyHTML, async (formData) => {
       const newStatus = formData.get('status');
-      
-      // Timer resets if changed from resolved to open or in_progress (resolved_at = null)
+
       const updateData = {
         status: newStatus,
         resolved_at: newStatus === 'resolved' ? new Date().toISOString() : null
@@ -153,7 +142,6 @@ export async function render(container) {
         .update(updateData)
         .eq('id', complaint.id);
 
-      // Fallback if resolved_at column does not exist in Supabase
       if (error && error.message && (error.message.includes('resolved_at') || error.message.includes('column'))) {
         const fallback = await supabase
           .from('complaints')

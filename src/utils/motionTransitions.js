@@ -187,17 +187,22 @@ export function initCursorTracking() {
       rafId = requestAnimationFrame(() => {
         const mainWrapper = document.querySelector('.main-wrapper');
         if (mainWrapper) {
-          mainWrapper.style.setProperty('--cursor-x', `${lastX}px`);
-          mainWrapper.style.setProperty('--cursor-y', `${lastY}px`);
+          const wrapperRect = mainWrapper.getBoundingClientRect();
+          const relX = lastX - wrapperRect.left;
+          const relY = lastY - wrapperRect.top;
+          mainWrapper.style.setProperty('--cursor-x', `${relX}px`);
+          mainWrapper.style.setProperty('--cursor-y', `${relY}px`);
         }
+        document.documentElement.style.setProperty('--cursor-x', `${lastX}px`);
+        document.documentElement.style.setProperty('--cursor-y', `${lastY}px`);
         rafId = null;
       });
     }
   }, { passive: true });
 
-  // Event delegation for card spotlight & magnetic primary actions
+  // Event delegation for card/button spotlight & magnetic primary actions
   document.addEventListener('pointermove', (e) => {
-    const target = e.target.closest('.glass-panel, .stat-card, .action-card, .room-card, .table-container, .btn-primary');
+    const target = e.target.closest('.glass-panel, .stat-card, .action-btn, .action-card, .room-card, .table-container, .btn, .modal-card, tr');
     if (!target) return;
 
     const rect = target.getBoundingClientRect();

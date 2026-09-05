@@ -83,6 +83,8 @@ export async function render(container) {
   // Roommates section
   const roommatesTitle = document.createElement('h3');
   roommatesTitle.textContent = 'Roommates';
+  roommatesTitle.style.marginTop = '28px';
+  roommatesTitle.style.marginBottom = '14px';
   container.appendChild(roommatesTitle);
 
   let roommates = [];
