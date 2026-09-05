@@ -18,6 +18,7 @@
   min-height: 100vh;
   overflow-x: clip;
   background: 
+    radial-gradient(circle 600px at var(--cursor-x, 85%) var(--cursor-y, 25%), rgba(232, 168, 56, 0.045) 0%, transparent 70%),
     linear-gradient(var(--rule-blueprint) 1px, transparent 1px) 0 0 / 48px 48px,
     linear-gradient(90deg, var(--rule-blueprint) 1px, transparent 1px) 0 0 / 48px 48px,
     radial-gradient(55% 45% at 88% 18%, var(--color-paper-emit) 0%, transparent 65%),
@@ -199,6 +200,36 @@
   display: flex;
   flex-direction: column;
   gap: 3px;
+  position: relative;
+}
+
+/* Sliding active tab indicator */
+.sidebar-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  background: var(--color-surface-active);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+  z-index: 1;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease, width 180ms ease, height 180ms ease;
+  opacity: 0;
+  box-sizing: border-box;
+}
+
+.sidebar-indicator::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 2.5px;
+  background: var(--color-accent);
+  border-radius: 2px;
+  box-shadow: 0 0 8px var(--color-glow);
 }
 
 .sidebar-link {
@@ -210,31 +241,19 @@
   color: var(--color-muted);
   font-size: var(--text-sm);
   font-weight: 400;
-  transition: all var(--transition);
+  transition: color 180ms var(--ease-soft), transform 120ms var(--ease-soft);
   position: relative;
+  z-index: 2;
+  border: 1px solid transparent;
 }
 
 .sidebar-link:hover {
   color: var(--color-ink);
-  background: var(--color-surface-hover);
 }
 
 .sidebar-link.active {
   color: var(--color-ink);
-  background: var(--color-surface-active);
   font-weight: 500;
-  border: 1px solid var(--color-rule);
-}
-
-.sidebar-link.active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 6px;
-  bottom: 6px;
-  width: 2px;
-  background: var(--color-accent);
-  border-radius: 2px;
 }
 
 .sidebar-icon {
@@ -245,6 +264,7 @@
   height: 18px;
   color: currentColor;
   opacity: 0.85;
+  transition: color 180ms var(--ease-soft);
 }
 
 .sidebar-link.active .sidebar-icon {

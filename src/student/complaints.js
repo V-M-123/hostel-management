@@ -24,12 +24,14 @@ export async function render(container) {
   container.appendChild(header);
 
   const filterBar = document.createElement('div');
-  filterBar.style.marginBottom = '10px';
+  filterBar.style.marginBottom = '16px';
   filterBar.innerHTML = `
     <select id="studentStatusFilter" class="form-select" style="width: auto; display: inline-block;">
       <option value="active" selected>Active Issues (Unresolved)</option>
+      <option value="open">Open</option>
+      <option value="in_progress">In Progress</option>
       <option value="resolved">Resolved (< 10 days)</option>
-      <option value="all">All</option>
+      <option value="all">All Complaints</option>
     </select>
   `;
   container.appendChild(filterBar);
@@ -37,23 +39,115 @@ export async function render(container) {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) { showToast('Authentication error', 'error'); return; }
 
-  const { data: allocation } = await supabase
+  // Fetch student's room allocation safely (avoids maybeSingle multiple rows error)
+  const { data: allocations, error: allocError } = await supabase
     .from('room_allocations')
-    .select('room_id')
+    .select('id, room_id, status, room:room_id(id, room_number, floor, hostel:hostel_id(name))')
     .eq('student_id', user.id)
     .eq('status', 'active')
-    .maybeSingle();
+    .order('allocated_date', { ascending: false });
 
+  let allocation = allocations && allocations.length > 0 ? allocations[0] : null;
+
+  // Fallback to any latest allocation if no active found
   if (!allocation) {
-    addBtn.disabled = true;
-    addBtn.title = 'You must be allocated to a room first';
-    addBtn.style.opacity = '0.5';
-    addBtn.style.cursor = 'not-allowed';
+    const { data: anyAlloc } = await supabase
+      .from('room_allocations')
+      .select('id, room_id, status, room:room_id(id, room_number, floor, hostel:hostel_id(name))')
+      .eq('student_id', user.id)
+      .order('allocated_date', { ascending: false })
+      .limit(1);
+    if (anyAlloc && anyAlloc.length > 0) {
+      allocation = anyAlloc[0];
+    }
   }
 
-  addBtn.addEventListener('click', () => {
-    if (!allocation) return;
+  // If no room is allocated, display a helpful notice banner
+  if (!allocation) {
+    const notice = document.createElement('div');
+    notice.style.marginBottom = '20px';
+    notice.style.padding = '14px 18px';
+    notice.style.background = 'rgba(232, 168, 56, 0.08)';
+    notice.style.border = '1px solid rgba(232, 168, 56, 0.25)';
+    notice.style.borderRadius = 'var(--radius)';
+    notice.style.display = 'flex';
+    notice.style.alignItems = 'center';
+    notice.style.gap = '12px';
+    notice.style.color = 'var(--color-ink)';
+    notice.innerHTML = `
+      <span style="font-size: 20px;">🏢</span>
+      <div>
+        <div style="font-weight: 500; margin-bottom: 2px;">No Active Room Allocation</div>
+        <div style="font-size: 13px; color: var(--color-muted);">You are not currently assigned to a hostel room. Please ask your warden or administrator for room allocation to log room-specific maintenance requests.</div>
+      </div>
+    `;
+    container.appendChild(notice);
+  }
+
+  addBtn.addEventListener('click', async () => {
+    if (!allocation) {
+      // Fetch available rooms so the student can select or contact admin
+      const { data: rooms } = await supabase.from('rooms').select('id, room_number, hostel:hostel_id(name)').order('room_number').limit(50);
+      
+      if (!rooms || rooms.length === 0) {
+        showToast('You must be assigned to a room by your warden or administrator before filing a complaint.', 'error');
+        return;
+      }
+
+      const roomOptions = rooms.map(r => `<option value="${r.id}">${r.hostel?.name || 'Block'} — Room ${r.room_number}</option>`).join('');
+
+      const bodyHTML = `
+        <div style="margin-bottom: 16px; background: rgba(232, 168, 56, 0.08); border: 1px solid rgba(232, 168, 56, 0.25); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; color: var(--color-ink);">
+          ⚠️ You do not have an active room allocation. Please select your room to log this complaint:
+        </div>
+        <div class="form-group">
+          <label class="form-label">Select Room / Location</label>
+          <select name="room_id" class="form-select" required>
+            ${roomOptions}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select name="category" class="form-select" required>
+            <option value="maintenance">Maintenance</option>
+            <option value="cleanliness">Cleanliness</option>
+            <option value="noise">Noise</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-textarea" required rows="4" placeholder="Describe the issue..."></textarea>
+        </div>
+      `;
+
+      openModal('File a Complaint', bodyHTML, async (formData) => {
+        const roomId = formData.get('room_id');
+        const category = formData.get('category');
+        const description = formData.get('description');
+        const { error } = await supabase.from('complaints').insert({
+          student_id: user.id,
+          room_id: roomId,
+          category,
+          description
+        });
+        if (error) {
+          showToast(error.message, 'error');
+        } else {
+          showToast('Complaint filed successfully!', 'success');
+          closeModal();
+          await render(container);
+        }
+      });
+      return;
+    }
+
+    const roomLabel = `${allocation.room?.hostel?.name || 'Hostel Block'} — Room ${allocation.room?.room_number || 'Your Room'}`;
+
     const bodyHTML = `
+      <div style="margin-bottom: 16px; background: rgba(232, 168, 56, 0.06); border: 1px solid var(--color-rule); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; color: var(--color-ink);">
+        <strong>Assigned Location:</strong> ${roomLabel}
+      </div>
       <div class="form-group">
         <label class="form-label">Category</label>
         <select name="category" class="form-select" required>
@@ -81,7 +175,7 @@ export async function render(container) {
       if (error) {
         showToast(error.message, 'error');
       } else {
-        showToast('Complaint filed successfully', 'success');
+        showToast('Complaint filed successfully!', 'success');
         closeModal();
         await render(container);
       }

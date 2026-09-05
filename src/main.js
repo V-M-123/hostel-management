@@ -4,8 +4,10 @@ import { initRouter, navigateTo } from './router.js';
 import { renderTopbar } from './components/topbar.js';
 import { renderSidebar } from './components/sidebar.js';
 import { showToast } from './components/toast.js';
+import { initCursorTracking } from './utils/motionTransitions.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+  initCursorTracking();
   onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
       initApp();
@@ -102,6 +104,9 @@ function renderAuthPage(container) {
           submitBtn.textContent = 'Sign In';
         } else {
           showToast('Signed in successfully!', 'success');
+          const user = await getCurrentUser();
+          const targetRole = user?.role || 'student';
+          window.location.hash = `#/${targetRole}/dashboard`;
           await initApp();
         }
       } else {

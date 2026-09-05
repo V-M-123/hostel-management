@@ -2,14 +2,15 @@ import { supabase } from '../supabaseClient.js';
 import { showToast } from '../components/toast.js';
 import { renderTable } from '../components/table.js';
 import { openModal, closeModal } from '../components/modal.js';
+import { getAssignedHostelsForWarden } from '../utils/wardenHelpers.js';
 
 export async function render(container) {
   container.innerHTML = '';
   
   const { data: { user } } = await supabase.auth.getUser();
-  const { data: hostel, error: hError } = await supabase.from('hostels').select('id').eq('warden_id', user.id).single();
+  const assignedHostels = await getAssignedHostelsForWarden(user.id);
 
-  if (hError || !hostel) {
+  if (!assignedHostels || assignedHostels.length === 0) {
     const msg = document.createElement('div');
     msg.className = 'empty-state';
     msg.innerHTML = `
@@ -20,17 +21,43 @@ export async function render(container) {
     return;
   }
 
-  const hostelId = hostel.id;
+  const primaryHostel = assignedHostels[0];
+  const hostelIds = assignedHostels.map(h => h.id);
+  let selectedHostelId = primaryHostel.id;
 
   const header = document.createElement('div');
   header.className = 'page-header';
-  const title = document.createElement('h1');
-  title.className = 'page-title';
-  title.textContent = 'Manage Rooms';
-  header.appendChild(title);
+  header.style.display = 'flex';
+  header.style.justifyContent = 'space-between';
+  header.style.alignItems = 'flex-start';
+  header.style.flexWrap = 'wrap';
+  header.style.gap = '16px';
+
+  const titleDiv = document.createElement('div');
+  titleDiv.innerHTML = `
+    <h1 class="page-title">Manage Rooms</h1>
+    <p style="color: var(--text-secondary); font-size: 14px;">${assignedHostels.map(h => h.name).join(', ')}</p>
+  `;
+  header.appendChild(titleDiv);
 
   const actions = document.createElement('div');
   actions.className = 'page-actions';
+  actions.style.display = 'flex';
+  actions.style.gap = '10px';
+  actions.style.alignItems = 'center';
+
+  if (assignedHostels.length > 1) {
+    const hostelSelect = document.createElement('select');
+    hostelSelect.className = 'form-select';
+    hostelSelect.style.width = 'auto';
+    hostelSelect.innerHTML = assignedHostels.map(h => `<option value="${h.id}">${h.name}</option>`).join('');
+    hostelSelect.onchange = (e) => {
+      selectedHostelId = e.target.value;
+      loadData();
+    };
+    actions.appendChild(hostelSelect);
+  }
+
   const newBtn = document.createElement('button');
   newBtn.className = 'btn btn-primary';
   newBtn.textContent = '+ New Room';
@@ -47,7 +74,7 @@ export async function render(container) {
     const { data, error } = await supabase
       .from('rooms')
       .select('*')
-      .eq('hostel_id', hostelId)
+      .eq('hostel_id', selectedHostelId)
       .order('floor')
       .order('room_number');
 
@@ -128,7 +155,7 @@ export async function render(container) {
         }
         res = await supabase.from('rooms').update({ room_number, floor, capacity }).eq('id', room.id);
       } else {
-        res = await supabase.from('rooms').insert({ hostel_id: hostelId, room_number, floor, capacity });
+        res = await supabase.from('rooms').insert({ hostel_id: selectedHostelId, room_number, floor, capacity });
       }
 
       if (res.error) {

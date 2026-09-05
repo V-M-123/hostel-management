@@ -26,21 +26,46 @@ export async function render(container) {
   const hostelId = allocation?.room?.hostel_id;
   const hostelName = allocation?.room?.hostel?.name;
 
-  let query = supabase
-    .from('announcements')
-    .select('*, author:posted_by(full_name)')
-    .order('created_at', { ascending: false });
-
-  if (hostelId) {
-    query = query.or(`hostel_id.eq.${hostelId},hostel_id.is.null`);
-  } else {
-    query = query.is('hostel_id', null);
-  }
-
   let announcements = [];
   try {
+    let query = supabase
+      .from('announcements')
+      .select('*, author:posted_by(full_name)')
+      .order('created_at', { ascending: false });
+
+    if (hostelId) {
+      query = query.or(`hostel_id.eq.${hostelId},hostel_id.is.null`);
+    } else {
+      query = query.is('hostel_id', null);
+    }
+
     const res = await query;
-    announcements = res.data || [];
+    if (res.error) {
+      // Fallback query without author join
+      let fallbackQuery = supabase
+        .from('announcements')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (hostelId) {
+        fallbackQuery = fallbackQuery.or(`hostel_id.eq.${hostelId},hostel_id.is.null`);
+      } else {
+        fallbackQuery = fallbackQuery.is('hostel_id', null);
+      }
+      const fbRes = await fallbackQuery;
+      announcements = fbRes.data || [];
+
+      // Fetch authors
+      const userIds = [...new Set(announcements.map(a => a.posted_by).filter(Boolean))];
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', userIds);
+        const pMap = Object.fromEntries((profiles || []).map(p => [p.id, p]));
+        announcements.forEach(a => {
+          if (!a.author) a.author = pMap[a.posted_by] || { full_name: 'Admin' };
+        });
+      }
+    } else {
+      announcements = res.data || [];
+    }
   } catch (e) {
     console.warn('Announcements query error:', e);
   }

@@ -148,10 +148,19 @@ export async function render(container) {
         resolved_at: newStatus === 'resolved' ? new Date().toISOString() : null
       };
 
-      const { error } = await supabase
+      let { error } = await supabase
         .from('complaints')
         .update(updateData)
         .eq('id', complaint.id);
+
+      // Fallback if resolved_at column does not exist in Supabase
+      if (error && error.message && (error.message.includes('resolved_at') || error.message.includes('column'))) {
+        const fallback = await supabase
+          .from('complaints')
+          .update({ status: newStatus })
+          .eq('id', complaint.id);
+        error = fallback.error;
+      }
 
       if (error) {
         showToast(error.message, 'error');

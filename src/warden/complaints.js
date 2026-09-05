@@ -101,7 +101,12 @@ export async function render(container) {
                   resolved_at: newStatus === 'resolved' ? new Date().toISOString() : null
                 };
 
-                const { error } = await supabase.from('complaints').update(updatePayload).eq('id', row.id);
+                let { error } = await supabase.from('complaints').update(updatePayload).eq('id', row.id);
+                if (error && error.message && (error.message.includes('resolved_at') || error.message.includes('column'))) {
+                  const fallback = await supabase.from('complaints').update({ status: newStatus }).eq('id', row.id);
+                  error = fallback.error;
+                }
+
                 if (error) {
                     showToast(error.message, 'error');
                     e.target.value = row.status; // revert

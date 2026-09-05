@@ -27,11 +27,39 @@ export async function render(container) {
   overviewSection.className = 'dashboard-section';
   overviewSection.innerHTML = `<div class="section-title">  System Overview</div>`;
 
-  const { data: stats, error: statsError } = await supabase.rpc('get_dashboard_stats');
-  if (statsError) {
-    showToast(statsError.message, 'error');
-    container.appendChild(overviewSection);
-    return;
+  let stats = null;
+  const { data: rpcStats, error: statsError } = await supabase.rpc('get_dashboard_stats');
+  if (!statsError && rpcStats) {
+    stats = rpcStats;
+  } else {
+    // Client-side fallback stats calculation
+    try {
+      const [{ data: hostels }, { data: rooms }, { data: complaints }] = await Promise.all([
+        supabase.from('hostels').select('id'),
+        supabase.from('rooms').select('id, capacity, occupied_count'),
+        supabase.from('complaints').select('id, status')
+      ]);
+
+      let totalCap = 0;
+      let totalOcc = 0;
+      (rooms || []).forEach(r => {
+        totalCap += r.capacity || 0;
+        totalOcc += r.occupied_count || 0;
+      });
+
+      const occPercent = totalCap > 0 ? Math.round((totalOcc / totalCap) * 100) : 0;
+      const pendingComps = (complaints || []).filter(c => c.status === 'open' || c.status === 'in_progress').length;
+
+      stats = {
+        total_hostels: (hostels || []).length,
+        total_rooms: (rooms || []).length,
+        occupancy_percentage: occPercent,
+        pending_complaints: pendingComps
+      };
+    } catch (e) {
+      console.warn('Fallback admin stats error:', e);
+      stats = { total_hostels: 0, total_rooms: 0, occupancy_percentage: 0, pending_complaints: 0 };
+    }
   }
 
   const statsGrid = document.createElement('div');

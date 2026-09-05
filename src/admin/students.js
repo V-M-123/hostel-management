@@ -161,10 +161,18 @@ export async function render(container) {
             }
             if (confirm(`Deallocate ${row.full_name} from ${row.room} (${row.hostel})?`)) {
               const vacatedDate = new Date().toISOString().split('T')[0];
-              const { error } = await supabase
+              let { error } = await supabase
                 .from('room_allocations')
                 .update({ status: 'vacated', vacated_date: vacatedDate })
                 .eq('id', row.allocation_id);
+
+              if (error && error.message && (error.message.includes('vacated_date') || error.message.includes('column'))) {
+                const fallback = await supabase
+                  .from('room_allocations')
+                  .update({ status: 'vacated' })
+                  .eq('id', row.allocation_id);
+                error = fallback.error;
+              }
 
               if (error) {
                 showToast(error.message, 'error');
@@ -253,10 +261,18 @@ export async function render(container) {
       const targetAllocationIds = targets.map(s => s.allocation_id);
       const vacatedDate = new Date().toISOString().split('T')[0];
 
-      const { error: deallocError } = await supabase
+      let { error: deallocError } = await supabase
         .from('room_allocations')
         .update({ status: 'vacated', vacated_date: vacatedDate })
         .in('id', targetAllocationIds);
+
+      if (deallocError && deallocError.message && (deallocError.message.includes('vacated_date') || deallocError.message.includes('column'))) {
+        const fallback = await supabase
+          .from('room_allocations')
+          .update({ status: 'vacated' })
+          .in('id', targetAllocationIds);
+        deallocError = fallback.error;
+      }
 
       if (deallocError) {
         showToast('Deallocation failed: ' + deallocError.message, 'error');
@@ -491,10 +507,17 @@ export async function render(container) {
       if (new_room_id !== student.room_id) {
         if (student.allocation_id) {
           // Vacate current allocation
-          await supabase
+          let { error: vError } = await supabase
             .from('room_allocations')
             .update({ status: 'vacated', vacated_date: new Date().toISOString().split('T')[0] })
             .eq('id', student.allocation_id);
+
+          if (vError && vError.message && (vError.message.includes('vacated_date') || vError.message.includes('column'))) {
+            await supabase
+              .from('room_allocations')
+              .update({ status: 'vacated' })
+              .eq('id', student.allocation_id);
+          }
         }
 
         if (new_room_id) {

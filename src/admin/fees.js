@@ -59,9 +59,28 @@ export async function render(container) {
       query = query.eq('status', statusFilter);
     }
 
-    const { data, error } = await query.order('due_date', { ascending: false });
+    let data = [];
+    let { data: resData, error } = await query.order('due_date', { ascending: false });
 
-    if (error) { showToast(error.message, 'error'); return; }
+    if (error) {
+      // Fallback without recorder join
+      let fallbackQuery = supabase
+        .from('fee_payments')
+        .select('*, student:student_id(full_name, phone)');
+      if (statusFilter === 'unpaid') {
+        fallbackQuery = fallbackQuery.neq('status', 'paid');
+      } else if (statusFilter !== 'all') {
+        fallbackQuery = fallbackQuery.eq('status', statusFilter);
+      }
+      const fb = await fallbackQuery.order('due_date', { ascending: false });
+      if (fb.error) {
+        showToast(fb.error.message, 'error');
+        return;
+      }
+      data = fb.data || [];
+    } else {
+      data = resData || [];
+    }
 
     renderTable(tableContainer, {
       columns: [
@@ -136,13 +155,21 @@ export async function render(container) {
 
     openModal('Mark Fee as Paid', bodyHTML, async (formData) => {
       const paidDate = formData.get('paid_date') || today;
-      const { error } = await supabase
+      let { error } = await supabase
         .from('fee_payments')
         .update({ 
           status: 'paid', 
           paid_date: paidDate 
         })
         .eq('id', row.id);
+
+      if (error && error.message && (error.message.includes('paid_date') || error.message.includes('column'))) {
+        const fallback = await supabase
+          .from('fee_payments')
+          .update({ status: 'paid' })
+          .eq('id', row.id);
+        error = fallback.error;
+      }
 
       if (error) {
         showToast(error.message, 'error');
@@ -203,7 +230,7 @@ export async function render(container) {
       
       const { data: { user } } = await supabase.auth.getUser();
 
-      const { error } = await supabase
+      let { error } = await supabase
         .from('fee_payments')
         .insert({
           student_id: studentId,
@@ -214,6 +241,19 @@ export async function render(container) {
           recorded_by: user.id
         });
       
+      if (error && error.message && (error.message.includes('paid_date') || error.message.includes('column'))) {
+        const fallback = await supabase
+          .from('fee_payments')
+          .insert({
+            student_id: studentId,
+            amount,
+            due_date: dueDate,
+            status,
+            recorded_by: user.id
+          });
+        error = fallback.error;
+      }
+
       if (error) {
         showToast(error.message, 'error');
       } else {
@@ -278,7 +318,7 @@ export async function render(container) {
         paidDate = null;
       }
       
-      const { error } = await supabase
+      let { error } = await supabase
         .from('fee_payments')
         .update({ 
           amount,
@@ -288,6 +328,18 @@ export async function render(container) {
         })
         .eq('id', row.id);
       
+      if (error && error.message && (error.message.includes('paid_date') || error.message.includes('column'))) {
+        const fallback = await supabase
+          .from('fee_payments')
+          .update({ 
+            amount,
+            due_date: dueDate,
+            status 
+          })
+          .eq('id', row.id);
+        error = fallback.error;
+      }
+
       if (error) {
         showToast(error.message, 'error');
       } else {

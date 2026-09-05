@@ -23,6 +23,10 @@ export function renderSidebar(container, role, currentPath) {
   const nav = document.createElement('div');
   nav.className = 'sidebar-nav';
 
+  const indicator = document.createElement('div');
+  indicator.className = 'sidebar-indicator';
+  nav.appendChild(indicator);
+
   const eyebrow = document.createElement('div');
   eyebrow.className = 'eyebrow';
   eyebrow.style.padding = '0 12px 10px 12px';
@@ -31,11 +35,14 @@ export function renderSidebar(container, role, currentPath) {
   nav.appendChild(eyebrow);
 
   const links = getLinks(role);
+  const linkElements = [];
   
   links.forEach(l => {
     const link = document.createElement('a');
     link.className = 'sidebar-link';
-    if (currentPath === l.path || (currentPath === '' && l.path === `#/${role}/dashboard`)) {
+    link.dataset.path = l.path;
+    const isActive = currentPath === l.path || (currentPath === '' && l.path === `#/${role}/dashboard`);
+    if (isActive) {
       link.classList.add('active');
     }
     
@@ -56,8 +63,28 @@ export function renderSidebar(container, role, currentPath) {
     });
     
     nav.appendChild(link);
+    linkElements.push(link);
   });
   
+  const updateIndicatorPosition = () => {
+    const activeLink = nav.querySelector('.sidebar-link.active');
+    if (activeLink && activeLink.offsetHeight > 0) {
+      indicator.style.opacity = '1';
+      indicator.style.transform = `translate3d(${activeLink.offsetLeft}px, ${activeLink.offsetTop}px, 0)`;
+      indicator.style.width = `${activeLink.offsetWidth}px`;
+      indicator.style.height = `${activeLink.offsetHeight}px`;
+    } else {
+      indicator.style.opacity = '0';
+    }
+  };
+
+  requestAnimationFrame(() => {
+    updateIndicatorPosition();
+    setTimeout(updateIndicatorPosition, 50);
+  });
+
+  window.addEventListener('resize', updateIndicatorPosition, { passive: true });
+
   container.appendChild(nav);
 }
 

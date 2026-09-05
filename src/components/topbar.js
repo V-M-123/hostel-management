@@ -41,6 +41,7 @@ export function renderTopbar(container, user) {
   logoutBtn.append(logoutIcon, logoutText);
 
   logoutBtn.onclick = async () => {
+    window.location.hash = '';
     await signOut();
     window.location.reload();
   };

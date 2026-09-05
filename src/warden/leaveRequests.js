@@ -70,21 +70,23 @@ export async function render(container) {
         { 
           label: 'Approve', 
           class: 'btn btn-sm btn-primary', 
+          show: (row) => row.status === 'pending',
           onClick: async (row) => {
             if (row.status !== 'pending') return;
             const { error } = await supabase.from('leave_requests').update({ status: 'approved', reviewed_by: user.id }).eq('id', row.id);
             if (error) showToast(error.message, 'error');
-            else { showToast('Request approved'); loadData(); }
+            else { showToast('Request approved', 'success'); await loadData(); }
           }
         },
         { 
           label: 'Reject', 
           class: 'btn btn-sm btn-danger', 
+          show: (row) => row.status === 'pending',
           onClick: async (row) => {
             if (row.status !== 'pending') return;
             const { error } = await supabase.from('leave_requests').update({ status: 'rejected', reviewed_by: user.id }).eq('id', row.id);
             if (error) showToast(error.message, 'error');
-            else { showToast('Request rejected'); loadData(); }
+            else { showToast('Request rejected', 'success'); await loadData(); }
           }
         }
       ],

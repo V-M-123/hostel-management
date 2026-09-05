@@ -28,21 +28,54 @@ export async function render(container) {
 
   const loadData = async () => {
     tableContainer.innerHTML = '';
-    const { data, error } = await supabase
+    
+    let announcements = [];
+    // 1. Attempt join with hostel and author
+    let { data, error } = await supabase
       .from('announcements')
       .select('*, hostel:hostel_id(name), author:posted_by(full_name)')
       .order('created_at', { ascending: false });
 
-    if (error) { showToast(error.message, 'error'); return; }
+    if (error) {
+      // 2. Resilient fallback if author:posted_by foreign key join is missing in schema cache
+      const fallback = await supabase
+        .from('announcements')
+        .select('*, hostel:hostel_id(name)')
+        .order('created_at', { ascending: false });
+      
+      if (fallback.error) {
+        // 3. Ultra fallback: simple select
+        const simple = await supabase.from('announcements').select('*').order('created_at', { ascending: false });
+        if (simple.error) {
+          showToast(simple.error.message, 'error');
+          return;
+        }
+        announcements = simple.data || [];
+      } else {
+        announcements = fallback.data || [];
+      }
+
+      // Enrich authors from profiles manually if not joined
+      const userIds = [...new Set(announcements.map(a => a.posted_by).filter(Boolean))];
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', userIds);
+        const pMap = Object.fromEntries((profiles || []).map(p => [p.id, p]));
+        announcements.forEach(a => {
+          if (!a.author) a.author = pMap[a.posted_by] || { full_name: 'Admin' };
+        });
+      }
+    } else {
+      announcements = data || [];
+    }
 
     renderTable(tableContainer, {
       columns: [
         { key: 'title', label: 'Title', render: (val, row) => row.title },
         { key: 'hostel', label: 'Scope', render: (val, row) => row.hostel ? row.hostel.name : 'Global' },
-        { key: 'author', label: 'Posted By', render: (val, row) => row.author?.full_name || 'System' },
+        { key: 'author', label: 'Posted By', render: (val, row) => row.author?.full_name || 'Admin' },
         { key: 'created_at', label: 'Date', render: (val) => new Date(val).toLocaleDateString() }
       ],
-      rows: data,
+      rows: announcements,
       actions: [
         { label: 'Edit', class: 'btn btn-sm btn-secondary', onClick: (row) => openAnnouncementModal(row) },
         { label: 'Delete', class: 'btn btn-sm btn-danger', onClick: async (row) => {

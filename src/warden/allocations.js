@@ -113,10 +113,18 @@ export async function render(container) {
             }
             if (confirm(`Vacate ${row.student?.full_name || 'student'} from Room ${row.room?.room_number}?`)) {
               const vacatedDate = new Date().toISOString().split('T')[0];
-              const { error } = await supabase
+              let { error } = await supabase
                 .from('room_allocations')
                 .update({ status: 'vacated', vacated_date: vacatedDate })
                 .eq('id', row.id);
+
+              if (error && error.message && (error.message.includes('vacated_date') || error.message.includes('column'))) {
+                const fallback = await supabase
+                  .from('room_allocations')
+                  .update({ status: 'vacated' })
+                  .eq('id', row.id);
+                error = fallback.error;
+              }
 
               if (error) {
                 showToast(error.message, 'error');

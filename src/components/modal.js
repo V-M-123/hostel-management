@@ -8,17 +8,21 @@ export function openModal(title, bodyHTML, onSubmit) {
 
   isClosing = false;
   const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
+  overlay.className = 'modal-overlay active';
   overlay.id = 'modal-overlay';
+  overlay.style.pointerEvents = 'auto';
   
   const content = document.createElement('div');
-  content.className = 'modal-content';
+  content.className = 'modal-content modal-container';
+  content.style.pointerEvents = 'auto';
   
   const header = document.createElement('div');
   header.className = 'modal-header';
-  const hTitle = document.createElement('span');
+  const hTitle = document.createElement('h3');
+  hTitle.className = 'modal-title';
   hTitle.textContent = title;
   const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
   closeBtn.className = 'modal-close';
   closeBtn.innerHTML = '&times;';
   closeBtn.onclick = () => closeModal();

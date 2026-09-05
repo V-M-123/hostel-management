@@ -2,21 +2,28 @@ import { supabase } from '../supabaseClient.js';
 import { showToast } from '../components/toast.js';
 import { renderTable } from '../components/table.js';
 import { openModal, closeModal } from '../components/modal.js';
+import { getAssignedHostelsForWarden } from '../utils/wardenHelpers.js';
 
 export async function render(container) {
   container.innerHTML = '';
   
   const { data: { user } } = await supabase.auth.getUser();
-  const { data: hostel, error: hError } = await supabase.from('hostels').select('id, name').eq('warden_id', user.id).single();
+  const assignedHostels = await getAssignedHostelsForWarden(user.id);
 
-  if (hError || !hostel) {
-    const msg = document.createElement('p');
-    msg.textContent = 'You are not assigned to any hostel block yet.';
+  if (!assignedHostels || assignedHostels.length === 0) {
+    const msg = document.createElement('div');
+    msg.className = 'empty-state';
+    msg.innerHTML = `
+      <div class="empty-state-icon">🏢</div>
+      <div class="empty-state-text">You are not assigned to any hostel block yet.</div>
+    `;
     container.appendChild(msg);
     return;
   }
 
-  const hostelId = hostel.id;
+  const primaryHostel = assignedHostels[0];
+  const hostelIds = assignedHostels.map(h => h.id);
+  const hostelMap = Object.fromEntries(assignedHostels.map(h => [h.id, h.name]));
 
   const header = document.createElement('div');
   header.className = 'page-header';
@@ -40,23 +47,53 @@ export async function render(container) {
 
   const loadData = async () => {
     tableContainer.innerHTML = '';
-    const { data, error } = await supabase
+    
+    let announcements = [];
+    const filterCond = hostelIds.map(id => `hostel_id.eq.${id}`).join(',') + ',hostel_id.is.null';
+
+    // 1. Try query with author join
+    let { data, error } = await supabase
       .from('announcements')
       .select('*, author:posted_by(full_name)')
-      .or(`hostel_id.eq.${hostelId},hostel_id.is.null`)
+      .or(filterCond)
       .order('created_at', { ascending: false });
 
-    if (error) { showToast(error.message, 'error'); return; }
+    if (error) {
+      // 2. Resilient fallback query
+      const fallback = await supabase
+        .from('announcements')
+        .select('*')
+        .or(filterCond)
+        .order('created_at', { ascending: false });
+
+      if (fallback.error) {
+        showToast(fallback.error.message, 'error');
+        return;
+      }
+      announcements = fallback.data || [];
+
+      // Enrich authors from profiles manually if needed
+      const userIds = [...new Set(announcements.map(a => a.posted_by).filter(Boolean))];
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', userIds);
+        const pMap = Object.fromEntries((profiles || []).map(p => [p.id, p]));
+        announcements.forEach(a => {
+          if (!a.author) a.author = pMap[a.posted_by] || { full_name: 'Staff' };
+        });
+      }
+    } else {
+      announcements = data || [];
+    }
 
     renderTable(tableContainer, {
       columns: [
         { key: 'title', label: 'Title', render: (val, row) => row.title },
         { key: 'message', label: 'Message', render: (val, row) => row.message.length > 50 ? row.message.substring(0, 50) + '...' : row.message },
-        { key: 'scope', label: 'Scope', render: (val, row) => row.hostel_id === hostelId ? hostel.name : 'Global' },
-        { key: 'author', label: 'Posted By', render: (val, row) => row.author?.full_name || 'System' },
+        { key: 'scope', label: 'Scope', render: (val, row) => row.hostel_id ? (hostelMap[row.hostel_id] || 'Hostel') : 'Global' },
+        { key: 'author', label: 'Posted By', render: (val, row) => row.author?.full_name || 'Staff' },
         { key: 'date', label: 'Date', render: (val, row) => new Date(row.created_at).toLocaleDateString() }
       ],
-      rows: data,
+      rows: announcements,
       actions: [
         { 
           label: 'Edit', 
@@ -88,6 +125,11 @@ export async function render(container) {
 
   const openAnnouncementModal = async (announcement = null) => {
     const isEdit = !!announcement;
+    const hostelOptions = assignedHostels.map(h => {
+      const selected = (announcement?.hostel_id === h.id || (!announcement && h.id === primaryHostel.id)) ? 'selected' : '';
+      return `<option value="${h.id}" ${selected}>${h.name}</option>`;
+    }).join('');
+
     const bodyHTML = `
       <div class="form-group">
         <label class="form-label">Title</label>
@@ -97,29 +139,36 @@ export async function render(container) {
         <label class="form-label">Message</label>
         <textarea name="message" class="form-textarea" id="annMessage" rows="5" required></textarea>
       </div>
+      <div class="form-group">
+        <label class="form-label">Target Hostel Block</label>
+        <select name="hostel_id" class="form-select" required>
+          ${hostelOptions}
+        </select>
+      </div>
     `;
 
     openModal(isEdit ? 'Edit Announcement' : 'New Announcement', bodyHTML, async (formData) => {
       const title = formData.get('title');
       const message = formData.get('message');
+      const targetHostelId = formData.get('hostel_id') || primaryHostel.id;
       
       if (isEdit) {
-        const { error } = await supabase.from('announcements').update({ title, message }).eq('id', announcement.id);
+        const { error } = await supabase.from('announcements').update({ title, message, hostel_id: targetHostelId }).eq('id', announcement.id);
         if (error) {
           showToast(error.message, 'error');
           return;
         }
       } else {
-        const { error } = await supabase.from('announcements').insert({ title, message, hostel_id: hostelId, posted_by: user.id });
+        const { error } = await supabase.from('announcements').insert({ title, message, hostel_id: targetHostelId, posted_by: user.id });
         if (error) {
           showToast(error.message, 'error');
           return;
         }
       }
       
-      showToast(`Announcement ${isEdit ? 'updated' : 'created'}`);
+      showToast(`Announcement ${isEdit ? 'updated' : 'created'} successfully`, 'success');
       closeModal();
-      loadData();
+      await loadData();
     });
     
     if (isEdit) {
@@ -128,5 +177,5 @@ export async function render(container) {
     }
   };
 
-  loadData();
+  await loadData();
 }

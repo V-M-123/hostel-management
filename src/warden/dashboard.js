@@ -3,14 +3,15 @@ import { showToast } from '../components/toast.js';
 import { navigateTo } from '../router.js';
 import { animateStaggerCards } from '../utils/motionTransitions.js';
 import { createIcon } from '../utils/icons.js';
+import { getAssignedHostelsForWarden } from '../utils/wardenHelpers.js';
 
 export async function render(container) {
   container.innerHTML = '';
 
   const { data: { user } } = await supabase.auth.getUser();
-  const { data: hostel, error: hError } = await supabase.from('hostels').select('*').eq('warden_id', user.id).single();
+  const assignedHostels = await getAssignedHostelsForWarden(user.id);
 
-  if (hError || !hostel) {
+  if (!assignedHostels || assignedHostels.length === 0) {
     const msg = document.createElement('div');
     msg.className = 'empty-state';
     const iconDiv = document.createElement('div');
@@ -24,12 +25,16 @@ export async function render(container) {
     return;
   }
 
+  const primaryHostel = assignedHostels[0];
+  const hostelIds = assignedHostels.map(h => h.id);
+  const hostelNames = assignedHostels.map(h => h.name).join(', ');
+
   const header = document.createElement('div');
   header.className = 'page-header';
   header.innerHTML = `
     <div>
-      <h1 class="page-title">${hostel.name} Management</h1>
-      <p style="color: var(--text-secondary); font-size: 14px;">Warden Dashboard for ${hostel.address || 'Hostel Block'}</p>
+      <h1 class="page-title">${hostelNames} Management</h1>
+      <p style="color: var(--text-secondary); font-size: 14px;">Warden Dashboard for ${assignedHostels.map(h => h.address || h.name).join(' | ')}</p>
     </div>
   `;
   container.appendChild(header);
@@ -39,11 +44,39 @@ export async function render(container) {
   statsSection.className = 'dashboard-section';
   statsSection.innerHTML = `<div class="section-title">Block Statistics</div>`;
 
-  const { data: stats, error: statsError } = await supabase.rpc('get_warden_dashboard_stats');
-  if (statsError) {
-    showToast(statsError.message, 'error');
-    container.appendChild(statsSection);
-    return;
+  let stats = null;
+  const { data: rpcStats, error: statsError } = await supabase.rpc('get_warden_dashboard_stats');
+  if (!statsError && rpcStats) {
+    stats = rpcStats;
+  } else {
+    // Client-side fallback stats calculation across assigned hostels
+    try {
+      const [{ data: rooms }, { data: complaints }, { data: leaves }] = await Promise.all([
+        supabase.from('rooms').select('id, capacity, occupied_count').in('hostel_id', hostelIds),
+        supabase.from('complaints').select('id, status'),
+        supabase.from('leave_requests').select('id, status').eq('status', 'pending')
+      ]);
+
+      let totalCap = 0;
+      let totalOcc = 0;
+      (rooms || []).forEach(r => {
+        totalCap += r.capacity || 0;
+        totalOcc += r.occupied_count || 0;
+      });
+
+      const openComps = (complaints || []).filter(c => c.status === 'open' || c.status === 'in_progress').length;
+
+      stats = {
+        total_rooms: (rooms || []).length,
+        occupied_rooms: totalOcc,
+        vacant_rooms: Math.max(0, totalCap - totalOcc),
+        open_complaints: openComps,
+        pending_leaves: (leaves || []).length
+      };
+    } catch (e) {
+      console.warn('Fallback stats error:', e);
+      stats = { total_rooms: 0, occupied_rooms: 0, vacant_rooms: 0, open_complaints: 0, pending_leaves: 0 };
+    }
   }
 
   const statsGrid = document.createElement('div');

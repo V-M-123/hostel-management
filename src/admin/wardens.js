@@ -45,12 +45,27 @@ export async function render(container) {
       .from('hostels')
       .select('id, name, warden_id');
 
-    const { data: hwLinks } = await supabase
-      .from('hostel_wardens')
-      .select('id, hostel_id, warden_id, hostel:hostel_id(id, name)');
-
     if (wError) { showToast(wError.message, 'error'); return; }
     if (hError) { showToast(hError.message, 'error'); return; }
+
+    const hostelMap = Object.fromEntries((hostels || []).map(h => [h.id, h]));
+
+    let hwLinks = [];
+    try {
+      let res = await supabase
+        .from('hostel_wardens')
+        .select('id, hostel_id, warden_id, hostel:hostel_id(id, name)');
+      
+      if (res.error) {
+        // Fallback without embedded hostel join
+        const fbRes = await supabase.from('hostel_wardens').select('id, hostel_id, warden_id');
+        hwLinks = fbRes.data || [];
+      } else {
+        hwLinks = res.data || [];
+      }
+    } catch (e) {
+      console.warn('hostel_wardens fetch warning:', e);
+    }
 
     const rows = (wardens || []).map(w => {
       // Find all hostels assigned to this warden
@@ -59,10 +74,12 @@ export async function render(container) {
 
       // Check hostel_wardens (1:M table)
       hwLinks?.forEach(link => {
-        if (link.warden_id === w.id && link.hostel) {
-          if (!assignedHostelIds.includes(link.hostel.id)) {
-            assignedHostelNames.push(link.hostel.name);
-            assignedHostelIds.push(link.hostel.id);
+        if (link.warden_id === w.id) {
+          const hId = link.hostel?.id || link.hostel_id;
+          const hName = link.hostel?.name || hostelMap[hId]?.name;
+          if (hId && hName && !assignedHostelIds.includes(hId)) {
+            assignedHostelNames.push(hName);
+            assignedHostelIds.push(hId);
           }
         }
       });
