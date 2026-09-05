@@ -7,12 +7,12 @@ export function renderTopbar(container, user) {
 
   const brand = document.createElement('div');
   brand.className = 'topbar-brand';
-  brand.textContent = 'HostelHub';
+  brand.textContent = 'hostelhub';
   
   const hamburger = document.createElement('button');
   hamburger.className = 'hamburger';
   hamburger.setAttribute('aria-label', 'Toggle Navigation');
-  hamburger.appendChild(createIcon('menu', { size: 20, strokeWidth: 2 }));
+  hamburger.appendChild(createIcon('menu', { size: 18, strokeWidth: 1.8 }));
   hamburger.onclick = () => {
     document.body.classList.toggle('sidebar-open');
   };
@@ -22,18 +22,22 @@ export function renderTopbar(container, user) {
 
   const name = document.createElement('span');
   name.className = 'topbar-user-name';
-  name.textContent = user.full_name || user.email || 'User';
+  name.style.fontSize = 'var(--text-sm)';
+  name.style.color = 'var(--color-ink)';
+  name.textContent = user.full_name || user.email || 'user';
   
   const role = user.role || 'student';
   const badge = document.createElement('span');
-  badge.className = `badge badge-${role} role-badge`;
-  badge.textContent = role.charAt(0).toUpperCase() + role.slice(1);
+  badge.className = 'status-badge status-in_progress';
+  badge.style.fontSize = '10px';
+  badge.textContent = role.toUpperCase();
   
   const logoutBtn = document.createElement('button');
   logoutBtn.className = 'btn btn-secondary btn-sm';
-  const logoutIcon = createIcon('logout', { size: 14, strokeWidth: 2 });
+  logoutBtn.style.fontSize = '12px';
+  const logoutIcon = createIcon('logout', { size: 13, strokeWidth: 1.8 });
   const logoutText = document.createElement('span');
-  logoutText.textContent = 'Logout';
+  logoutText.textContent = 'logout';
   logoutBtn.append(logoutIcon, logoutText);
 
   logoutBtn.onclick = async () => {

@@ -1,5 +1,6 @@
 /* ============================================================================
-   HIGGSFIELD AI DESIGN SYSTEM — PAGE STYLES
+   HALLMARK · THEME: LUMEN — PAGE STYLES & VIEWS
+   Auth card · Room visualizer · Precision grid components
    ============================================================================ */
 
 /* Auth Page (Sign In / Sign Up) */
@@ -10,21 +11,21 @@
   justify-content: center;
   min-height: 100vh;
   padding: 24px;
-  background-color: var(--bg-primary);
-  background-image: var(--auth-vignette);
-  transition: background-color 0.2s ease;
+  background: 
+    linear-gradient(var(--rule-blueprint) 1px, transparent 1px) 0 0 / 48px 48px,
+    linear-gradient(90deg, var(--rule-blueprint) 1px, transparent 1px) 0 0 / 48px 48px,
+    radial-gradient(60% 50% at 50% 25%, var(--color-paper-emit) 0%, transparent 65%),
+    var(--color-paper);
 }
 
 .auth-card {
   width: 100%;
   max-width: 420px;
-  background: rgba(9, 9, 13, 0.85);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--border-glass-strong);
-  border-radius: 16px;
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(209, 254, 23, 0.05);
-  padding: 36px 32px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-rule-2);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-modal);
+  padding: 40px 36px;
   position: relative;
   overflow: hidden;
 }
@@ -36,26 +37,26 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--color-acid-yellow), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
 }
 
 .auth-header {
   text-align: center;
-  margin-bottom: 28px;
+  margin-bottom: 30px;
 }
 
 .auth-header h1 {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.03em;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 400;
+  color: var(--color-ink);
+  letter-spacing: -0.025em;
   margin-bottom: 6px;
 }
 
 .auth-header p {
-  font-size: 13px;
-  color: var(--text-muted);
+  font-size: var(--text-sm);
+  color: var(--color-muted);
 }
 
 .auth-form {
@@ -64,91 +65,106 @@
 }
 
 .auth-form .btn {
-  margin-top: 12px;
-  padding: 12px;
-  font-size: 14px;
-  font-weight: 600;
-  border-radius: 8px;
+  margin-top: 14px;
+  padding: 11px;
+  font-size: var(--text-sm);
+  font-weight: 500;
 }
 
 .auth-footer {
   text-align: center;
-  margin-top: 24px;
-  padding-top: 18px;
-  border-top: 1px solid var(--border-glass);
-  font-size: 13px;
-  color: var(--text-muted);
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-rule);
+  font-size: var(--text-sm);
+  color: var(--color-muted);
 }
 
 .auth-footer a {
-  color: var(--color-acid-yellow);
-  font-weight: 600;
+  color: var(--color-accent);
+  font-weight: 500;
   text-decoration: none;
   cursor: pointer;
+  border-bottom: 1px dotted var(--color-accent);
 }
 
 .auth-footer a:hover {
-  text-decoration: underline;
+  color: var(--color-accent-hover);
+  border-bottom-style: solid;
 }
 
 /* Room Visualizer Grid */
 .rooms-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
 }
 
 .room-card {
-  padding: 18px;
-  background: var(--bg-glass);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--border-glass);
+  padding: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-rule);
   border-radius: var(--radius);
-  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--transition), border-color var(--transition), background-color var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.room-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(244, 243, 248, 0.08), transparent);
 }
 
 .room-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(209, 254, 23, 0.35);
-  box-shadow: 0 0 16px rgba(209, 254, 23, 0.08);
+  border-color: var(--color-rule-2);
+  background: var(--color-surface-hover);
 }
 
 .room-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .room-number {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 400;
+  color: var(--color-ink);
 }
 
 .room-occupancy {
-  font-size: 12px;
-  font-family: 'IBM Plex Mono', monospace;
-  color: var(--text-muted);
+  font-size: var(--text-micro);
+  font-family: var(--font-mono);
+  color: var(--color-muted);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
 }
 
 /* Occupancy Bar */
 .occupancy-bar-bg {
   width: 100%;
-  height: 6px;
-  background: var(--bg-tertiary);
+  height: 5px;
+  background: var(--color-paper);
   border-radius: 9999px;
   overflow: hidden;
-  margin-top: 8px;
+  margin-top: 10px;
+  border: 1px solid var(--color-rule);
 }
 
 .occupancy-bar-fill {
   height: 100%;
-  background: var(--color-acid-yellow);
+  background: var(--color-accent);
   border-radius: 9999px;
-  transition: width 0.4s ease;
-  box-shadow: 0 0 8px rgba(209, 254, 23, 0.4);
+  transition: width 0.4s var(--ease-soft);
 }
 
 /* Filter Bar */

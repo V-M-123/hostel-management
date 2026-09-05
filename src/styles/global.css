@@ -1,3 +1,9 @@
+/* ============================================================================
+   HALLMARK · THEME: LUMEN (NIGHT FOUNDRY) · ANTI-AI-SLOP DESIGN SYSTEM
+   Register: Hand-engineered apparatus · Instrument Serif display · JetBrains Mono
+   Two-register typography: lowercase prose · UPPERCASE mono labels
+   ============================================================================ */
+
 @import "tailwindcss";
 
 @theme inline {
@@ -5,164 +11,208 @@
 }
 
 :root {
-  /* ==========================================================================
-     HIGGSFIELD AI PERMANENT OBSIDIAN DARK THEME
-     ========================================================================== */
-
-  /* Tailwind / Component Semantic Tokens */
-  --background: #030304;
-  --foreground: #f4f4f5;
-  --card: #09090d;
-  --card-foreground: #f4f4f5;
-  --popover: #09090d;
-  --popover-foreground: #f4f4f5;
+  /* Hallmark Lumen Night Foundry Palette (Canvas: 265° cool-violet) */
+  --color-paper: #0e0d15;
+  --color-surface: #14131d;
+  --color-surface-hover: #1c1a28;
+  --color-surface-active: #232032;
   
-  --primary: #d1fe17;
-  --primary-foreground: #000000;
+  --color-ink: #f4f3f8;
+  --color-ink-2: #c7c4d4;
+  --color-muted: #86839a;
+  --color-faint: #56536b;
+
+  --color-accent: #e8a838;       /* Molten brass */
+  --color-accent-hover: #f3b64c;
+  --color-accent-text: #0e0d15;
+  --color-accent-2: #e05e52;     /* Coral chord (verb landmark & danger) */
   
-  --secondary: #00f080;
-  --secondary-foreground: #000000;
+  --color-success: #34d399;
+  --color-success-bg: rgba(52, 211, 153, 0.12);
+  --color-warning: #fbbf24;
+  --color-warning-bg: rgba(251, 191, 36, 0.12);
+  --color-danger: #e05e52;
+  --color-danger-bg: rgba(224, 94, 82, 0.14);
+  --color-info: #e8a838;
+  --color-info-bg: rgba(232, 168, 56, 0.12);
+
+  --color-glow: rgba(232, 168, 56, 0.36);
+  --color-glow-2: rgba(232, 168, 56, 0.12);
+  --color-paper-emit: rgba(232, 168, 56, 0.04);
+  --rule-blueprint: rgba(244, 243, 248, 0.04);
+  --color-rule: rgba(244, 243, 248, 0.09);
+  --color-rule-2: rgba(244, 243, 248, 0.16);
+
+  /* Semantic Variables */
+  --bg-primary: var(--color-paper);
+  --bg-secondary: var(--color-surface);
+  --bg-tertiary: var(--color-surface-hover);
+  --bg-glass: rgba(20, 19, 29, 0.88);
+  --bg-glass-hover: rgba(28, 26, 40, 0.94);
   
-  --accent: #15151e;
-  --accent-foreground: #d1fe17;
-  
-  --muted: #181822;
-  --muted-foreground: #a1a1aa;
-  
-  --destructive: #ff3b5c;
-  --destructive-foreground: #ffffff;
-  
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.08);
-  --ring: #d1fe17;
-  --radius: 0.625rem;
+  --border-glass: var(--color-rule);
+  --border-glass-strong: var(--color-rule-2);
 
-  /* Higgsfield Core Obsidian & Acid Palette */
-  --color-void: #030304;
-  --color-carbon: #09090d;
-  --color-obsidian: #101016;
-  --color-graphite: #181822;
-  --color-smoke: #272733;
-  --color-ash: #52525b;
-  --color-fog: #a1a1aa;
-  --color-mist: #d4d4d8;
-  --color-bone: #f4f4f5;
-  --color-paper: #ffffff;
+  --text-primary: var(--color-ink);
+  --text-secondary: var(--color-ink-2);
+  --text-muted: var(--color-muted);
 
-  --color-acid-yellow: #d1fe17;
-  --color-cyber-green: #00f080;
-  --color-cyber-red: #ff3b5c;
-  --color-cyber-orange: #ff7700;
-  --color-cosmic-violet: #9945ff;
+  --input-bg: rgba(14, 13, 21, 0.85);
+  --input-border: var(--color-rule);
+  --input-focus-bg: rgba(20, 19, 29, 0.98);
+  --icon-box-bg: rgba(232, 168, 56, 0.09);
+  --modal-overlay-bg: rgba(8, 7, 12, 0.85);
 
-  /* Theme Mapping */
-  --bg-primary: var(--color-void);
-  --bg-secondary: var(--color-carbon);
-  --bg-tertiary: var(--color-obsidian);
-  --bg-glass: rgba(10, 10, 15, 0.75);
-  --bg-glass-hover: rgba(24, 24, 34, 0.85);
-  --border-glass: rgba(255, 255, 255, 0.08);
-  --border-glass-strong: rgba(255, 255, 255, 0.15);
+  /* Typography Stack */
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-body: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
 
-  --text-primary: var(--color-paper);
-  --text-secondary: var(--color-mist);
-  --text-muted: var(--color-fog);
+  /* Typography Sizing */
+  --text-display: clamp(2.2rem, 3.2vw + 1rem, 3.6rem);
+  --text-h1: clamp(1.8rem, 2.2vw + 0.8rem, 2.6rem);
+  --text-h2: 1.4rem;
+  --text-h3: 1.15rem;
+  --text-body: 0.9375rem;
+  --text-sm: 0.8125rem;
+  --text-micro: 0.6875rem;
 
-  --accent-hover: #bceb08;
-  --accent-text: #000000;
-  --accent-glow: rgba(209, 254, 23, 0.35);
+  --tracking-micro: 0.10em;
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
 
-  --input-bg: rgba(14, 14, 20, 0.85);
-  --input-border: rgba(255, 255, 255, 0.09);
-  --input-focus-bg: rgba(20, 20, 28, 0.95);
-  --icon-box-bg: rgba(209, 254, 23, 0.08);
-  --modal-overlay-bg: rgba(3, 3, 4, 0.88);
-  --auth-vignette: radial-gradient(circle at 50% 25%, rgba(209, 254, 23, 0.07) 0%, transparent 65%);
+  /* Precision Shadows (Lumen depth without AI bloom slop) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-card: inset 0 1px 0 rgba(244, 243, 248, 0.06), 0 0 0 1px var(--color-rule), 0 8px 24px -12px rgba(0, 0, 0, 0.7);
+  --shadow-elevated: inset 0 1px 0 rgba(244, 243, 248, 0.09), 0 0 0 1px var(--color-rule-2), 0 20px 48px -20px rgba(0, 0, 0, 0.85);
+  --shadow-modal: 0 0 0 1px var(--color-rule-2), 0 32px 64px -24px rgba(0, 0, 0, 0.95);
 
-  /* Status Colors */
-  --success: var(--color-cyber-green);
-  --success-bg: rgba(0, 240, 128, 0.12);
-  --warning: var(--color-cyber-orange);
-  --warning-bg: rgba(255, 119, 0, 0.12);
-  --danger: var(--color-cyber-red);
-  --danger-bg: rgba(255, 59, 92, 0.14);
-  --info: var(--color-acid-yellow);
-  --info-bg: rgba(209, 254, 23, 0.12);
-
-  /* Shadows & Elevation */
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.6);
-  --shadow-subtle: inset 0 0 0 1px var(--border-glass);
-  --shadow-card: 0 0 0 1px var(--border-glass), 0 4px 16px rgba(0, 0, 0, 0.6);
-  --shadow-elevated: 0 0 0 1px var(--border-glass-strong), 0 12px 32px rgba(0, 0, 0, 0.8);
-  --shadow-lg: 0 0 0 1px var(--border-glass-strong), 0 20px 48px rgba(0, 0, 0, 0.95);
-  --shadow: var(--shadow-card);
-
-  --transition: 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --transition: 0.2s var(--ease-soft);
+  --dur-pulse: 4s;
 }
 
-* {
+/* Base Reset & Two-Register Foundation */
+*, *::before, *::after {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 }
 
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  line-height: 1.5;
+html, body {
+  width: 100%;
+  min-height: 100%;
+  background-color: var(--color-paper);
+  color: var(--color-ink-2);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-  min-height: 100vh;
-  position: relative;
+  overflow-x: clip;
 }
 
-/* Ambient Higgsfield subtle cosmic background lighting */
-body::before {
-  content: '';
-  position: fixed;
-  top: -120px;
-  right: -80px;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(209, 254, 23, 0.04) 0%, rgba(153, 69, 255, 0.02) 50%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
+/* Two-Register Typography Rule:
+   1. All prose is LOWERCASE
+   2. All mono tags/eyebrows are UPPERCASE */
+body, h1, h2, h3, h4, h5, h6, p, a, span, button, input, select, textarea, label {
+  text-transform: lowercase;
 }
 
-h1, h2, h3, h4, .font-heading {
-  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+/* Mono Technical Labels (UPPERCASE Exception) */
+.eyebrow,
+.meter__label,
+.stat-label,
+.mono-label,
+.card-eyebrow,
+.badge,
+.status-badge,
+.tag,
+.code-inline,
+.tabular-num,
+.callout {
+  font-family: var(--font-mono) !important;
+  text-transform: uppercase !important;
+  font-size: var(--text-micro) !important;
+  letter-spacing: var(--tracking-micro) !important;
+  font-weight: 500;
+}
+
+/* Heading Typography: Classical Instrument Serif */
+h1, h2, h3, .page-title, .hero-title, .section-title-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  color: var(--color-ink);
+  line-height: 1.12;
   letter-spacing: -0.025em;
-  font-weight: 600;
 }
 
-.font-mono, .badge, .status-badge, .stat-value {
-  font-family: 'IBM Plex Mono', monospace;
+/* Verb Landmark (Lumen Signature Move: Upright em in Coral Chord with Draw-in Underline) */
+h1 em, h2 em, .page-title em, .hero-title em {
+  font-style: normal;
+  color: var(--color-accent-2);
+  position: relative;
+  white-space: nowrap;
 }
 
+h1 em::after, h2 em::after, .page-title em::after, .hero-title em::after {
+  content: "";
+  position: absolute;
+  left: 0.05em;
+  right: 0.05em;
+  bottom: 0.04em;
+  height: 1px;
+  background: var(--color-accent-2);
+  transform-origin: left;
+  animation: lumen-underline 320ms var(--ease-soft) 400ms backwards;
+}
+
+@keyframes lumen-underline {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  h1 em::after, h2 em::after, .page-title em::after, .hero-title em::after {
+    animation: none;
+  }
+}
+
+/* Links */
 a {
-  color: var(--color-acid-yellow);
+  color: inherit;
   text-decoration: none;
-  transition: opacity var(--transition);
+  transition: color var(--transition);
 }
 
 a:hover {
-  opacity: 0.85;
+  color: var(--color-ink);
 }
 
-/* Scrollbar Styling */
+/* Selection */
+::selection {
+  background: rgba(232, 168, 56, 0.28);
+  color: var(--color-ink);
+}
+
+/* Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--color-paper);
 }
+
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 9999px;
+  background: var(--color-surface-hover);
+  border-radius: 3px;
+  border: 1px solid var(--color-rule);
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(209, 254, 23, 0.4);
+  background: var(--color-muted);
 }

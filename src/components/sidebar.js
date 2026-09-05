@@ -10,11 +10,11 @@ export function renderSidebar(container, role, currentPath) {
   
   const brandIcon = document.createElement('div');
   brandIcon.className = 'sidebar-brand-icon';
-  const hfIcon = createIcon('building', { size: 14, strokeWidth: 2.5, color: '#000000' });
+  const hfIcon = createIcon('building', { size: 14, strokeWidth: 2.2, color: 'var(--color-accent-text)' });
   brandIcon.appendChild(hfIcon);
 
   const brandText = document.createElement('span');
-  brandText.textContent = 'HostelHub';
+  brandText.textContent = 'hostelhub';
 
   brand.appendChild(brandIcon);
   brand.appendChild(brandText);
@@ -22,6 +22,13 @@ export function renderSidebar(container, role, currentPath) {
 
   const nav = document.createElement('div');
   nav.className = 'sidebar-nav';
+
+  const eyebrow = document.createElement('div');
+  eyebrow.className = 'eyebrow';
+  eyebrow.style.padding = '0 12px 10px 12px';
+  eyebrow.style.color = 'var(--color-muted)';
+  eyebrow.textContent = `01 · ${role.toUpperCase()} CONSOLE`;
+  nav.appendChild(eyebrow);
 
   const links = getLinks(role);
   
@@ -34,10 +41,7 @@ export function renderSidebar(container, role, currentPath) {
     
     const iconEl = document.createElement('span');
     iconEl.className = 'sidebar-icon';
-    iconEl.style.display = 'inline-flex';
-    iconEl.style.alignItems = 'center';
-    iconEl.style.justifyContent = 'center';
-    iconEl.appendChild(createIcon(l.iconName, { size: 16, strokeWidth: 1.9 }));
+    iconEl.appendChild(createIcon(l.iconName, { size: 15, strokeWidth: 1.8 }));
 
     const text = document.createElement('span');
     text.textContent = l.label;
@@ -60,31 +64,31 @@ export function renderSidebar(container, role, currentPath) {
 function getLinks(role) {
   if (role === 'admin') {
     return [
-      { label: 'Dashboard', iconName: 'dashboard', path: '#/admin/dashboard' },
-      { label: 'Hostels', iconName: 'hostel', path: '#/admin/hostels' },
-      { label: 'Wardens', iconName: 'warden', path: '#/admin/wardens' },
-      { label: 'Students', iconName: 'student', path: '#/admin/students' },
-      { label: 'Complaints', iconName: 'complaint', path: '#/admin/complaints' },
-      { label: 'Fee Reports', iconName: 'fee', path: '#/admin/fees' },
-      { label: 'Announcements', iconName: 'announcement', path: '#/admin/announcements' }
+      { label: 'dashboard', iconName: 'dashboard', path: '#/admin/dashboard' },
+      { label: 'hostels', iconName: 'hostel', path: '#/admin/hostels' },
+      { label: 'wardens', iconName: 'warden', path: '#/admin/wardens' },
+      { label: 'students', iconName: 'student', path: '#/admin/students' },
+      { label: 'complaints', iconName: 'complaint', path: '#/admin/complaints' },
+      { label: 'fee reports', iconName: 'fee', path: '#/admin/fees' },
+      { label: 'announcements', iconName: 'announcement', path: '#/admin/announcements' }
     ];
   } else if (role === 'warden') {
     return [
-      { label: 'Dashboard', iconName: 'dashboard', path: '#/warden/dashboard' },
-      { label: 'Rooms', iconName: 'room', path: '#/warden/rooms' },
-      { label: 'Allocations', iconName: 'allocation', path: '#/warden/allocations' },
-      { label: 'Complaints', iconName: 'complaint', path: '#/warden/complaints' },
-      { label: 'Leave Requests', iconName: 'leave', path: '#/warden/leave-requests' },
-      { label: 'Announcements', iconName: 'announcement', path: '#/warden/announcements' }
+      { label: 'dashboard', iconName: 'dashboard', path: '#/warden/dashboard' },
+      { label: 'rooms', iconName: 'room', path: '#/warden/rooms' },
+      { label: 'allocations', iconName: 'allocation', path: '#/warden/allocations' },
+      { label: 'complaints', iconName: 'complaint', path: '#/warden/complaints' },
+      { label: 'leave requests', iconName: 'leave', path: '#/warden/leave-requests' },
+      { label: 'announcements', iconName: 'announcement', path: '#/warden/announcements' }
     ];
   } else {
     return [
-      { label: 'Dashboard', iconName: 'dashboard', path: '#/student/dashboard' },
-      { label: 'My Room', iconName: 'room', path: '#/student/room' },
-      { label: 'Complaints', iconName: 'complaint', path: '#/student/complaints' },
-      { label: 'Fees', iconName: 'fee', path: '#/student/fees' },
-      { label: 'Leave Requests', iconName: 'leave', path: '#/student/leave-requests' },
-      { label: 'Announcements', iconName: 'announcement', path: '#/student/announcements' }
+      { label: 'dashboard', iconName: 'dashboard', path: '#/student/dashboard' },
+      { label: 'my room', iconName: 'room', path: '#/student/room' },
+      { label: 'complaints', iconName: 'complaint', path: '#/student/complaints' },
+      { label: 'fees', iconName: 'fee', path: '#/student/fees' },
+      { label: 'leave requests', iconName: 'leave', path: '#/student/leave-requests' },
+      { label: 'announcements', iconName: 'announcement', path: '#/student/announcements' }
     ];
   }
 }
