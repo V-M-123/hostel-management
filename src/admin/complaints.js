@@ -40,7 +40,7 @@ export async function render(container) {
 
   createPageLayout(container, {
     title: 'Complaint Logs',
-    description: 'Active campus issues (resolved issues auto-expire after 10 days)',
+    description: '',//'Active campus issues (resolved issues auto-expire after 10 days)',
     actions: [filterContainer]
   });
 

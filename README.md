@@ -1,124 +1,125 @@
 # HostelHub — Cloud-Native Hostel Management System
 
-[![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-[![Supabase](https://img.shields.io/badge/Supabase-Cloud%20BaaS-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Vercel](https://img.shields.io/badge/Vercel-Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://vercel.com/)
-
-A modern, cloud-native **Single-Page Application (SPA)** designed for university and institutional hostel operations. Built with high performance, strict multi-tenancy, granular database-level Row Level Security (RLS), and an editorial, typography-driven user interface.
+**Deployed Application URL**: [https://hostel-management-miyl.vercel.app/](https://hostel-management-miyl.vercel.app/)
 
 ---
 
-## Table of Contents
+## 1. Project Overview & Problem Statement
 
-- [Architectural Overview](#architectural-overview)
-- [Cloud Infrastructure & Services](#cloud-infrastructure--services)
-- [Key Features by Role](#key-features-by-role)
-- [RESTful APIs & Stored Procedures (RPCs)](#restful-apis--stored-procedures-rpcs)
-- [Database Schema & Triggers](#database-schema--triggers)
-- [Security & Zero-Trust Governance](#security--zero-trust-governance)
-- [Design System & Typography](#design-system--typography)
-- [Local Development Setup](#local-development-setup)
-- [Cloud Deployment (Vercel)](#cloud-deployment-vercel)
-- [Directory Structure](#directory-structure)
+University and institutional residential hostels often struggle with fragmented manual processes, such as paper-based room allocations, untracked maintenance complaints, opaque leave authorization workflows, and disconnected fee records.
+
+**HostelHub** is a cloud-based web application that addresses these operational challenges by automating the entire hostel administration lifecycle. The system provides real-time room capacity tracking, automated batch room allocations, digital leave requests, maintenance ticket management with automated archiving, fee tracking, and campus-wide notice broadcasting across three role-based portals: **Administrator**, **Hostel Warden**, and **Student Resident**.
 
 ---
 
-## Architectural Overview
+## 2. Cloud System Architecture
 
-HostelHub uses a **Backend-as-a-Service (BaaS)** cloud architecture powered by **Supabase (PostgreSQL)** and **Vite SPA (Vercel CDN)**. Business logic, data integrity, access boundaries, and authorization are enforced directly at the database engine level via PostgreSQL Row Level Security (RLS) policies, PL/pgSQL triggers, and `SECURITY DEFINER` Remote Procedure Calls (RPCs).
+The application uses a decoupled multi-cloud architecture separating client delivery, backend API routing, and cloud database management:
+
+- **Frontend Tier (Vercel)**: Single-Page Application (SPA) hosted and globally distributed via Vercel Edge Network.
+- **Backend Tier (Render)**: Backend environment and API gateway hosted on Render, handling routing and environment integration.
+- **Database & BaaS Tier (Supabase)**: Managed PostgreSQL 15 database on Supabase providing authentication, automated PostgREST RESTful APIs, and PL/pgSQL stored procedures.
 
 ```mermaid
 flowchart TB
-    subgraph ClientLayer["Frontend Client Layer (Edge / Browser)"]
-        UI["HostelHub SPA (Vite + Vanilla JS)"]
-        Router["Client-Side Hash Router"]
-        AuthStore["Auth & Session Manager"]
+    subgraph Clients["User Portals"]
+        Admin["Administrator"]
+        Warden["Hostel Warden"]
+        Student["Student Resident"]
     end
 
-    subgraph CloudGateway["Cloud API & Edge Gateway"]
-        PostgREST["Supabase PostgREST API (Auto-Generated REST Endpoints)"]
-        GoTrue["Supabase GoTrue (JWT Authentication Service)"]
+    subgraph Vercel["Frontend Hosting (Vercel Cloud)"]
+        CDN["Vercel Edge Network / CDN"]
+        SPA["HostelHub SPA (Vite + JavaScript)"]
     end
 
-    subgraph DatabaseLayer["Cloud Database Layer (PostgreSQL 15)"]
-        RLS["Row Level Security (RLS Engine)"]
-        Triggers["PL/pgSQL Automation Triggers"]
-        RPC["PostgreSQL RPC Functions (SECURITY DEFINER)"]
-        Tables[(Relational Tables: Hostels, Rooms, Allocations, Complaints, Fees, Leaves)]
+    subgraph Render["Backend Hosting (Render Cloud)"]
+        BackendEnv["Backend Services & Environment Gateway"]
     end
 
-    UI --> Router
-    Router --> AuthStore
-    AuthStore -->|JWT Bearer Token| GoTrue
-    UI -->|RESTful CRUD Calls| PostgREST
-    UI -->|Execute Stored Procedures| RPC
-    PostgREST --> RLS
+    subgraph Supabase["Cloud Database & BaaS (Supabase Cloud)"]
+        Auth["Supabase GoTrue Auth (JWT)"]
+        REST["PostgREST RESTful API"]
+        RPC["PostgreSQL PL/pgSQL RPC Functions"]
+        RLS["Row Level Security (RLS) Engine"]
+        Triggers["Automated Database Triggers"]
+        DB[(PostgreSQL 15 Relational Database)]
+    end
+
+    Admin --> CDN
+    Warden --> CDN
+    Student --> CDN
+    CDN --> SPA
+
+    SPA -->|Authentication| Auth
+    SPA -->|RESTful CRUD Calls via Render Gateway| BackendEnv
+    BackendEnv --> REST
+    SPA -->|Direct REST & RPC Execution| REST
+    SPA -->|Execute Stored Procedures| RPC
+
+    Auth -.->|JWT Bearer Token| RLS
+    REST --> RLS
     RPC --> RLS
-    RLS --> Tables
-    Tables --> Triggers
+    RLS --> DB
+    DB --> Triggers
 ```
 
 ---
 
-## Cloud Infrastructure & Services
+## 3. Cloud Services & Infrastructure Stack
 
-| Cloud Service | Provider | Purpose in System |
+| Layer | Provider | Role & Implementation |
 | :--- | :--- | :--- |
-| **Edge Hosting & CDN** | Vercel | High-availability global deployment of static web assets with automated CI/CD builds on push. |
-| **Relational Database** | Supabase (AWS) | Fully managed PostgreSQL instance handling relational data, foreign key constraints, indexes, and transactional integrity. |
-| **Identity & Authentication** | Supabase Auth | Secure user lifecycle management, salted password hashing, and signed JWT issuance. |
-| **RESTful API Layer** | PostgREST | Instant, OpenAPI-compliant REST APIs mapped directly over PostgreSQL views, tables, and functions. |
-| **Serverless Logic** | PL/pgSQL RPCs | Atomically executed database procedures for complex multi-table allocations, statistical aggregations, and role governance. |
+| **Frontend Hosting** | Vercel | Edge distribution, automated continuous deployment (CI/CD) on Git push, global asset caching, and SSL/TLS termination. |
+| **Backend Hosting** | Render | Cloud backend environment running application gateway services and API integration. |
+| **Database & BaaS** | Supabase | Managed cloud PostgreSQL instance, database-level security policies, and user authentication. |
+| **RESTful API Layer** | PostgREST | Automatic generation of OpenAPI-compliant RESTful endpoints directly from PostgreSQL schema. |
+| **Identity & Auth** | Supabase Auth | User registration, password hashing (bcrypt), and signed JSON Web Token (JWT) session validation. |
+| **Serverless Logic** | PL/pgSQL RPCs | Transactional stored procedures running directly inside PostgreSQL for atomic operations. |
 
 ---
 
-## Key Features by Role
+## 4. Cloud Computing Concepts Demonstrated
 
-### 1. Administrator Portal
-- **Campus Dashboard**: High-level statistical summaries (total hostels, aggregate room capacities, live campus occupancy percentage, open complaints, student headcount).
-- **Hostel Block Management**: Create, view, update, and delete hostel blocks and assign designated wardens.
-- **Room Infrastructure**: Define floors, capacities, room numbers, and inspect real-time occupancy counts.
-- **Student & Role Governance**: View campus-wide student directories and promote/demote user roles (`student`, `warden`, `admin`).
-- **Financial Ledger**: Issue student fee invoices, set due dates, mark manual settlements, and track overdue accounts.
-- **Grievance Oversight**: Campus-wide monitoring of maintenance, hygiene, and disciplinary complaints.
-- **Broadcast Announcements**: Publish global campus announcements visible to all residents and staff.
-
-### 2. Warden Portal
-- **Hostel-Scoped Dashboard**: Metrics tailored to the warden's assigned hostel blocks (vacant vs. occupied rooms, pending leave applications, unresolved complaints).
-- **Room Allocation Management**: 
-  - Manual student check-in / check-out.
-  - **Automated Random Allocation Engine**: Batch-allocates unassigned students to available rooms within capacity limits.
-- **Leave Request Processing**: Review, approve, or reject student night-out and vacation leave requests.
-- **Complaint Resolution**: Update complaint statuses (`open` → `in_progress` → `resolved`) with automated 10-day auto-archive triggers.
-- **Block Announcements**: Post announcements scoped exclusively to residents of their assigned hostel block.
-
-### 3. Student Portal
-- **Personal Living Space**: View assigned hostel block, room number, floor, and a privacy-safe roster of active roommates.
-- **Complaints & Maintenance**: File detailed repair/cleanliness complaints with real-time status tracking.
-- **Fee Management**: Review payment history, outstanding balances, due dates, and paid receipts.
-- **Digital Leave Passes**: Submit leave requests with specific date ranges and justifications; track warden approval status.
-- **Notice Board**: Access campus-wide broadcasts and hostel-specific notices.
+1. **Decoupled Multi-Cloud Architecture**: Physical and logical separation between frontend hosting (Vercel), backend services (Render), and managed database storage (Supabase).
+2. **Multi-Tenancy & Data Isolation**: Shared cloud database architecture isolating institutional data through Row Level Security (RLS) policies and user identity tokens (`auth.uid()`).
+3. **Stateless RESTful Communication**: Standardized HTTP/JSON communication authenticated via bearer JWT tokens without server-side session bottlenecks.
+4. **Backend-as-a-Service (BaaS) & Serverless Compute**: Offloaded database administration, automatic REST API generation, and serverless transactional logic executed via PL/pgSQL triggers and RPCs.
+5. **Continuous Deployment (CI/CD)**: Automated production builds and global edge deployments triggered upon version-controlled repository updates.
 
 ---
 
-## RESTful APIs & Stored Procedures (RPCs)
+## 5. Complete CRUD Operations Implementation
 
-Communication between the client SPA and the cloud database leverages Supabase's PostgREST RESTful interface alongside custom PostgreSQL RPC endpoints.
+The application implements complete Create, Read, Update, and Delete operations across all core modules:
 
-### Primary RESTful Table Endpoints
+| Entity | Create (C) | Read (R) | Update (U) | Delete (D) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Hostels** | Admin registers new hostel blocks and assigns wardens. | All authenticated users view hostel lists and details. | Admin modifies hostel details and warden assignments. | Admin removes hostel blocks. |
+| **Rooms** | Admin/Warden creates rooms with floor and capacity limits. | Filtered views by hostel, floor, and occupancy status. | Admin/Warden edits room capacity and details. | Admin/Warden deletes unoccupied rooms. |
+| **Allocations** | Warden assigns students manually or via random batch allocation. | Students view own room and roommates; Wardens view block allocations. | Warden transfers students or marks allocations as vacated. | Admin/Warden removes allocation records. |
+| **Complaints** | Student files categorized complaint with description. | Student tracks own complaints; Warden/Admin reviews block complaints. | Warden updates status (`open` -> `in_progress` -> `resolved`). | Auto-archived after 10 days of resolution via trigger. |
+| **Fee Payments** | Admin/Warden generates student fee invoices with due dates. | Students check fee dues and payment history; Admin/Warden monitors ledger. | Admin/Warden records payment or updates invoice amount. | Admin deletes cancelled invoices. |
+| **Leave Requests** | Student submits digital leave application with date range. | Student views application status; Warden reviews pending requests. | Warden approves or rejects leave requests. | Student cancels pending applications. |
+| **Announcements** | Admin/Warden posts global or hostel-specific notices. | Real-time notice feed for students and staff. | Author updates notice title and message body. | Author or Admin deletes obsolete notices. |
+| **User Profiles** | Auto-created on user registration via database trigger. | Directory inspection based on administrative role. | Users update contact details; Admin promotes/demotes roles. | Admin purges deactivated accounts. |
 
-| Method | Endpoint | Description | Access Boundary |
+---
+
+## 6. RESTful API & RPC Endpoints
+
+### RESTful Table Endpoints
+
+| Method | Endpoint | Purpose | Access Control |
 | :--- | :--- | :--- | :--- |
-| `GET` / `PATCH` | `/rest/v1/profiles` | User profiles and role information | Self / Admin / Scoped Warden |
-| `GET` / `POST` / `PATCH` / `DELETE` | `/rest/v1/hostels` | Hostel buildings and warden associations | Admin (CRUD), All (Read) |
-| `GET` / `POST` / `PATCH` / `DELETE` | `/rest/v1/rooms` | Room details and capacity limits | Admin/Warden (Write), Resident (Read) |
-| `GET` / `POST` / `PATCH` / `DELETE` | `/rest/v1/room_allocations` | Active and historical bed assignments | Admin/Warden (Manage), Student (Self) |
-| `GET` / `POST` / `PATCH` | `/rest/v1/complaints` | Maintenance and facility complaints | Student (Create/Read), Warden/Admin (Update) |
-| `GET` / `POST` / `PATCH` / `DELETE` | `/rest/v1/fee_payments` | Student dues and payment ledgers | Admin/Warden (Manage), Student (Self) |
-| `GET` / `POST` / `PATCH` | `/rest/v1/leave_requests` | Leave requests and approvals | Student (Create/Read), Warden/Admin (Review) |
-| `GET` / `POST` / `PATCH` / `DELETE` | `/rest/v1/announcements` | Campus and hostel announcements | Admin/Warden (Publish), Resident (Read) |
+| `GET` / `PATCH` | `/rest/v1/profiles` | Fetch user profile or update contact details | Self / Admin / Assigned Warden |
+| `GET` / `POST` / `PATCH` / `DELETE` | `/rest/v1/hostels` | Manage hostel blocks | Admin (Write), All (Read) |
+| `GET` / `POST` / `PATCH` / `DELETE` | `/rest/v1/rooms` | Manage room inventories and capacities | Admin/Warden (Write), Resident (Read) |
+| `GET` / `POST` / `PATCH` / `DELETE` | `/rest/v1/room_allocations` | Manage active and historical room allocations | Admin/Warden (Write), Student (Self) |
+| `GET` / `POST` / `PATCH` | `/rest/v1/complaints` | File, view, and update maintenance tickets | Student (Create/Read), Warden/Admin (Update) |
+| `GET` / `POST` / `PATCH` / `DELETE` | `/rest/v1/fee_payments` | Manage fee invoices and payment records | Admin/Warden (Write), Student (Self) |
+| `GET` / `POST` / `PATCH` | `/rest/v1/leave_requests` | Submit, view, and review leave applications | Student (Create/Read), Warden/Admin (Update) |
+| `GET` / `POST` / `PATCH` / `DELETE` | `/rest/v1/announcements` | Publish, view, and remove announcements | Admin/Warden (Write), Resident (Read) |
 
 ### PostgreSQL RPC Stored Procedures
 
@@ -133,14 +134,15 @@ POST /rest/v1/rpc/get_my_roommates
 POST /rest/v1/rpc/random_allocate_students
 ```
 
-- **`get_dashboard_stats()`**: Returns aggregate campus statistics as a JSON payload for the Admin dashboard.
-- **`get_warden_dashboard_stats()`**: Aggregates room occupancy, pending leaves, and active grievances specifically for the calling warden's assigned hostels.
-- **`random_allocate_students(p_hostel_id, p_max_count)`**: Atomic, capacity-aware cursor loop that pairs unallocated students with rooms possessing remaining capacity.
-- **`review_leave_request(p_request_id, p_status)`**: Validates multi-tenant warden assignment before updating student leave approval status.
+- **`get_dashboard_stats()`**: Aggregates campus-wide metrics (occupancy rate, hostel counts, pending complaints, student total) for the Admin portal.
+- **`get_warden_dashboard_stats()`**: Aggregates occupancy, pending leaves, and active complaints scoped strictly to the calling warden's assigned hostels.
+- **`random_allocate_students(p_hostel_id, p_max_count)`**: Atomic, capacity-aware cursor loop allocating unassigned students to rooms with available capacity.
+- **`review_leave_request(p_request_id, p_status)`**: Validates multi-tenant warden assignment before updating leave request status.
+- **`update_user_role(p_user_id, p_new_role)`**: Admin-only procedure to promote or demote user roles (`student`, `warden`, `admin`).
 
 ---
 
-## Database Schema & Triggers
+## 7. Database Design & Relational Schema
 
 ```mermaid
 erDiagram
@@ -169,6 +171,13 @@ erDiagram
         uuid id PK
         text name
         text address
+        uuid warden_id FK
+        timestamptz created_at
+    }
+
+    HOSTEL_WARDENS {
+        uuid id PK
+        uuid hostel_id FK
         uuid warden_id FK
         timestamptz created_at
     }
@@ -234,132 +243,31 @@ erDiagram
     }
 ```
 
-### Automated PL/pgSQL Triggers
-1. **`handle_new_user()`**: Automatically bootstraps a `public.profiles` row upon new Supabase Auth registration, locking initial privilege to `'student'`.
-2. **`update_room_occupancy()`**: Dynamically increments or decrements `rooms.occupied_count` whenever `room_allocations` are inserted, modified, or removed.
-3. **`set_resolved_timestamp()`**: Stamps `resolved_at` when a complaint is marked as resolved, enabling clean 10-day retention filtering.
-4. **`handle_fee_paid_date()`**: Synchronizes `paid_date` automatically when fee status transitions between `'due'` and `'paid'`.
-5. **`prevent_self_role_escalation()`**: Guards against non-admin users attempting to alter their own `role` in `public.profiles`.
+### Automated Database Triggers
+1. **`handle_new_user()`**: Creates a `public.profiles` record on user signup with default `'student'` role to prevent privilege escalation.
+2. **`update_room_occupancy()`**: Dynamically updates `rooms.occupied_count` on allocation insert, update, or delete.
+3. **`set_resolved_timestamp()`**: Sets `resolved_at = now()` when a complaint is marked resolved for retention tracking.
+4. **`handle_fee_paid_date()`**: Synchronizes `paid_date` automatically when fee status changes between `'due'` and `'paid'`.
+5. **`prevent_self_role_escalation()`**: Prevents non-admin users from modifying their own role column.
 
 ---
 
-## Security & Zero-Trust Governance
+## 8. Security & Row Level Security (RLS)
 
-1. **Row Level Security (RLS)**: Enforced across 100% of tables. A compromised client token cannot read or mutate records outside its RLS policy definitions.
-2. **Privilege Escalation Defense**: Client registration metadata cannot override user roles. Only authenticated administrators executing RPCs can promote users.
-3. **Search Path Pinning**: All `SECURITY DEFINER` functions declare `SET search_path = public, pg_temp` to eliminate PostgreSQL schema shadowing and search-path injection vulnerabilities.
-4. **Cross-Tenant Boundary Enforcement**: Wardens are strictly validated against their assigned hostel IDs (`get_my_hostel_ids()`) before approving leave requests or generating fee records.
-5. **DOM-based XSS Elimination**: All table cells and dynamic views render user-provided input through safe DOM APIs (`textContent`, `createElement`, `appendChild`), neutralising stored script injection.
+### Row Level Security Policy Matrix
 
----
+| Database Table | Administrator | Hostel Warden | Student Resident |
+| :--- | :--- | :--- | :--- |
+| **`profiles`** | Full CRUD | Read students in assigned hostels | Read and update own profile |
+| **`hostels`** | Full CRUD | Read all / Manage assigned blocks | Read assigned hostel |
+| **`rooms`** | Full CRUD | Manage rooms in assigned hostels | Read assigned room |
+| **`room_allocations`** | Full CRUD | Manage allocations in assigned hostels | Read own active allocation & roommates |
+| **`complaints`** | Full CRUD | Update status in assigned hostels | Create own / Read own complaints |
+| **`fee_payments`** | Full CRUD | Manage fees for assigned students | Read own billing records |
+| **`leave_requests`** | Full CRUD | Review requests for assigned students | Create own / Read own requests |
+| **`announcements`** | Full CRUD | Post to assigned hostels / Read all | Read campus and hostel notices |
 
-## Design System & Typography
-
-HostelHub implements the **Hallmark Lumen** design language — a warm editorial aesthetic designed for clarity and legibility.
-
-- **Headings & Metric Numbers**: `Cormorant Garamond` (weight 500) for an elegant, dignified visual hierarchy.
-- **Body & UI Elements**: `DM Sans` for high-readability text, navigation items, tables, and form inputs.
-- **Labels & Badges**: `Space Mono` (11.5px, uppercase, letter-spacing: `0.15em`) for technical status chips and metadata tags.
-
----
-
-## Local Development Setup
-
-### Prerequisites
-- [Node.js](https://nodejs.org/) (v18.0.0 or higher)
-- [npm](https://www.npmjs.com/) (v9.0.0 or higher)
-- A free [Supabase](https://supabase.com/) account
-
-### 1. Clone & Install
-```bash
-git clone https://github.com/your-username/hostel-management.git
-cd hostel-management
-npm install
-```
-
-### 2. Environment Configuration
-Create a `.env` file in the root directory:
-```env
-VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_ANON_KEY=your-supabase-anon-public-key
-```
-
-### 3. Database Initialization
-1. Open your project in the **Supabase Dashboard**.
-2. Navigate to the **SQL Editor**.
-3. Copy and execute the contents of `backend/master_setup.sql` (or run the modular files in `sql/` in numerical sequence).
-
-### 4. Start Local Development Server
-```bash
-npm run dev
-```
-Open `http://localhost:5173` in your browser.
-
-### 5. Create Your First Administrator
-1. Sign up a new user via the application interface.
-2. In Supabase Dashboard -> **Table Editor** -> **`profiles`**, locate your user row.
-3. Update the `role` column from `'student'` to `'admin'`.
-4. Refresh the application to access the Admin Console.
-
----
-
-## Cloud Deployment (Vercel)
-
-1. Push your repository to GitHub or GitLab.
-2. Log in to [Vercel](https://vercel.com/) and click **Add New Project**.
-3. Import your `hostel-management` repository.
-4. Under **Environment Variables**, add:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-5. Click **Deploy**. Vercel will run `npm run build` and provision your application on high-speed edge nodes.
-
----
-
-## Directory Structure
-
-```text
-hostel-management/
-├── backend/
-│   └── master_setup.sql          # Consolidated master schema, RLS, triggers & RPCs
-├── sql/
-│   ├── 001_schema.sql            # Core tables, constraints & triggers
-│   ├── 002_rls_policies.sql      # Row Level Security helper functions & policies
-│   ├── 003_rpc_functions.sql     # Stored procedures for dashboard, allocations & roles
-│   └── 004_seed.sql              # Optional test fixtures and initial seed data
-├── src/
-│   ├── admin/                    # Admin dashboard, hostels, rooms, wardens, students, fees
-│   ├── warden/                   # Warden dashboard, allocations, leave approvals, notices
-│   ├── student/                  # Student dashboard, room view, grievances, fees, leave
-│   ├── components/               # Reusable UI components (table, modal, badges, layout)
-│   ├── lib/                      # Supabase database query helpers & abstractions
-│   ├── styles/                   # Global, layout, and component CSS design tokens
-│   ├── utils/                    # Formatters, dates, and helper utilities
-│   ├── auth.js                   # Client-side authentication and role management
-│   ├── main.js                   # Application entry point & route bootstrapping
-│   ├── router.js                 # Hash-based SPA routing engine
-│   └── supabaseClient.js         # Supabase client instantiation
-├── index.html                    # Root HTML file with web fonts & entry script
-├── package.json                  # Dependencies, build scripts & metadata
-├── vite.config.js                # Vite build and development configuration
-└── README.md                     # Project documentation
-```
-
----
-
-## Verification & Build
-
-To test and compile the production bundle locally:
-
-```bash
-# Execute production build
-npm run build
-
-# Preview production build locally
-npm run preview
-```
-
----
-
-## License
-
-This project is open-source software licensed under the **MIT License**.
+### Defensive Hardening Implementation
+- **Search Path Pinning**: All `SECURITY DEFINER` stored procedures explicitly set `SET search_path = public, pg_temp` to neutralize search-path shadowing attacks.
+- **Multi-Tenant Boundary Validation**: Stored procedures verify that wardens only manage data for students allocated to their assigned hostels (`get_my_hostel_ids()`).
+- **DOM-based XSS Defense**: Dynamic client rendering uses safe DOM node methods (`textContent`, `createElement`, `appendChild`), eliminating unescaped script injection.
