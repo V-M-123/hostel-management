@@ -61,14 +61,8 @@ function renderAuthPage(container) {
     if (!isLogin) {
       const nameGroup = createFormGroup('Full Name', 'fullName', 'text');
       const phoneGroup = createFormGroup('Phone', 'phone', 'text');
-      const roleGroup = createSelectGroup('Register As', 'role', [
-        { value: 'student', label: '🎓 Student' },
-        { value: 'admin', label: '🛡️ Admin' },
-        { value: 'warden', label: '🔑 Warden' }
-      ]);
       form.appendChild(nameGroup);
       form.appendChild(phoneGroup);
-      form.appendChild(roleGroup);
     }
 
     const emailGroup = createFormGroup('Email', 'email', 'email');
@@ -112,7 +106,6 @@ function renderAuthPage(container) {
       } else {
         const fullName = fd.get('fullName');
         const phone = fd.get('phone');
-        const role = fd.get('role') || 'student';
         const confirm = fd.get('confirmPassword');
         
         if (password !== confirm) {
@@ -122,11 +115,11 @@ function renderAuthPage(container) {
           return;
         }
 
-        const { error } = await signUp(email, password, fullName, phone, role);
+        const { error } = await signUp(email, password, fullName, phone, 'student');
         if (error) {
           showToast(error.message, 'error');
         } else {
-          showToast(`Account created as ${role.toUpperCase()}! You can now log in.`, 'success');
+          showToast('Account created successfully! You can now log in.', 'success');
           isLogin = true;
           renderForm();
         }
@@ -156,26 +149,6 @@ function renderAuthPage(container) {
   }
   
   renderForm();
-}
-
-function createSelectGroup(labelText, name, options) {
-  const group = document.createElement('div');
-  group.className = 'form-group';
-  const label = document.createElement('label');
-  label.className = 'form-label';
-  label.textContent = labelText;
-  const select = document.createElement('select');
-  select.name = name;
-  select.className = 'form-select';
-  options.forEach(opt => {
-    const o = document.createElement('option');
-    o.value = opt.value;
-    o.textContent = opt.label;
-    select.appendChild(o);
-  });
-  group.appendChild(label);
-  group.appendChild(select);
-  return group;
 }
 
 function createFormGroup(labelText, name, type) {
