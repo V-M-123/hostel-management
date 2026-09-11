@@ -4,6 +4,7 @@ CREATE OR REPLACE FUNCTION public.assign_warden_to_hostel(p_hostel_id uuid, p_wa
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 BEGIN
     IF public.get_my_role() <> 'admin' THEN
@@ -19,6 +20,7 @@ CREATE OR REPLACE FUNCTION public.update_user_role(p_user_id uuid, p_new_role te
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 BEGIN
     IF public.get_my_role() <> 'admin' THEN
@@ -39,6 +41,7 @@ CREATE OR REPLACE FUNCTION public.get_dashboard_stats()
 RETURNS json
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
     v_total_hostels int;
@@ -83,6 +86,7 @@ CREATE OR REPLACE FUNCTION public.get_warden_dashboard_stats()
 RETURNS json
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
     v_total_rooms int;
@@ -112,9 +116,8 @@ BEGIN
         );
     END IF;
 
-    SELECT COUNT(*), COALESCE(SUM(capacity), 0)
-    INTO v_total_rooms, v_total_capacity 
-    FROM public.rooms WHERE hostel_id = ANY(v_hostel_ids);
+    SELECT COUNT(*) INTO v_total_rooms FROM public.rooms WHERE hostel_id = ANY(v_hostel_ids);
+    SELECT COALESCE(SUM(capacity), 0) INTO v_total_capacity FROM public.rooms WHERE hostel_id = ANY(v_hostel_ids);
     
     SELECT COUNT(*) INTO v_occupied_rooms FROM public.rooms WHERE hostel_id = ANY(v_hostel_ids) AND occupied_count > 0;
     v_vacant_rooms := v_total_rooms - v_occupied_rooms;
@@ -146,6 +149,7 @@ CREATE OR REPLACE FUNCTION public.create_fee_record(
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
     v_role text;
@@ -186,12 +190,15 @@ CREATE OR REPLACE FUNCTION public.review_leave_request(p_request_id uuid, p_stat
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
     v_student_id uuid;
-    v_is_valid_warden boolean;
+    v_is_valid boolean;
+    v_role text;
 BEGIN
-    IF public.get_my_role() <> 'warden' THEN
+    v_role := public.get_my_role();
+    IF v_role NOT IN ('admin', 'warden') THEN
         RAISE EXCEPTION 'Unauthorized';
     END IF;
     
@@ -204,15 +211,18 @@ BEGIN
         RAISE EXCEPTION 'Request not found';
     END IF;
     
-    SELECT EXISTS (
-        SELECT 1 FROM public.room_allocations ra
-        JOIN public.rooms r ON ra.room_id = r.id
-        JOIN public.hostels h ON r.hostel_id = h.id
-        WHERE ra.student_id = v_student_id AND ra.status = 'active' AND h.warden_id = auth.uid()
-    ) INTO v_is_valid_warden;
-    
-    IF NOT v_is_valid_warden THEN
-        RAISE EXCEPTION 'Unauthorized for this student';
+    IF v_role = 'warden' THEN
+        SELECT EXISTS (
+            SELECT 1 FROM public.room_allocations ra
+            JOIN public.rooms r ON ra.room_id = r.id
+            WHERE ra.student_id = v_student_id 
+              AND ra.status = 'active' 
+              AND r.hostel_id IN (SELECT public.get_my_hostel_ids())
+        ) INTO v_is_valid;
+        
+        IF NOT v_is_valid THEN
+            RAISE EXCEPTION 'Unauthorized for this student';
+        END IF;
     END IF;
     
     UPDATE public.leave_requests 
@@ -225,6 +235,7 @@ CREATE OR REPLACE FUNCTION public.get_my_roommates()
 RETURNS TABLE (full_name text)
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
     v_room_id uuid;

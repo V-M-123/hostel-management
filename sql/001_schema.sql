@@ -97,14 +97,14 @@ BEGIN
         NEW.id,
         COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
         NEW.raw_user_meta_data->>'phone',
-        COALESCE(NEW.raw_user_meta_data->>'role', 'student')
+        'student' -- Always default to student; promotions require admin RPC
     )
     ON CONFLICT (id) DO UPDATE
-    SET role = COALESCE(EXCLUDED.role, profiles.role),
-        full_name = COALESCE(EXCLUDED.full_name, profiles.full_name);
+    SET full_name = COALESCE(EXCLUDED.full_name, profiles.full_name),
+        phone = COALESCE(EXCLUDED.phone, profiles.phone);
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
@@ -126,7 +126,7 @@ BEGIN
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 CREATE TRIGGER on_room_allocation_changed
     AFTER INSERT OR UPDATE OR DELETE ON public.room_allocations
@@ -143,7 +143,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public, pg_temp;
 
 CREATE TRIGGER before_complaint_update
     BEFORE UPDATE ON public.complaints
@@ -160,7 +160,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public, pg_temp;
 
 CREATE TRIGGER before_fee_payment_insert_update
     BEFORE INSERT OR UPDATE ON public.fee_payments
@@ -175,7 +175,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 CREATE TRIGGER trg_prevent_role_escalation
     BEFORE UPDATE ON public.profiles

@@ -21,7 +21,7 @@ CREATE OR REPLACE FUNCTION public.get_my_hostel_ids()
 RETURNS SETOF uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 STABLE
 AS $$
 BEGIN
@@ -36,7 +36,7 @@ CREATE OR REPLACE FUNCTION public.get_warden_room_ids()
 RETURNS SETOF uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 STABLE
 AS $$
 BEGIN
@@ -51,7 +51,7 @@ CREATE OR REPLACE FUNCTION public.get_warden_student_ids()
 RETURNS SETOF uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 STABLE
 AS $$
 BEGIN
@@ -67,7 +67,7 @@ CREATE OR REPLACE FUNCTION public.get_my_allocated_room_id()
 RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 STABLE
 AS $$
 DECLARE
@@ -85,7 +85,7 @@ CREATE OR REPLACE FUNCTION public.get_my_allocated_hostel_id()
 RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 STABLE
 AS $$
 DECLARE
@@ -297,7 +297,8 @@ WITH CHECK (student_id = auth.uid());
 
 CREATE POLICY "leave_requests_update" ON public.leave_requests FOR UPDATE
 USING (
-    public.get_my_role() = 'warden' AND student_id IN (SELECT public.get_warden_student_ids())
+    public.get_my_role() = 'admin' OR 
+    (public.get_my_role() = 'warden' AND student_id IN (SELECT public.get_warden_student_ids()))
 );
 
 -- announcements

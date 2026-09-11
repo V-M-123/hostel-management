@@ -107,11 +107,11 @@ BEGIN
         NEW.id,
         COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
         NEW.raw_user_meta_data->>'phone',
-        COALESCE(NEW.raw_user_meta_data->>'role', 'student')
+        'student' -- Always default to student; promotions require admin RPC
     )
     ON CONFLICT (id) DO UPDATE
-    SET role = COALESCE(EXCLUDED.role, profiles.role),
-        full_name = COALESCE(EXCLUDED.full_name, profiles.full_name);
+    SET full_name = COALESCE(EXCLUDED.full_name, profiles.full_name),
+        phone = COALESCE(EXCLUDED.phone, profiles.phone);
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
@@ -639,10 +639,29 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
+DECLARE
+    v_role text;
+    v_is_valid boolean;
 BEGIN
-    IF public.get_my_role() NOT IN ('admin', 'warden') THEN
+    v_role := public.get_my_role();
+    IF v_role NOT IN ('admin', 'warden') THEN
         RAISE EXCEPTION 'Unauthorized';
     END IF;
+    
+    IF v_role = 'warden' THEN
+        SELECT EXISTS (
+            SELECT 1 FROM public.room_allocations ra
+            JOIN public.rooms r ON ra.room_id = r.id
+            WHERE ra.student_id = p_student_id 
+              AND ra.status = 'active' 
+              AND r.hostel_id IN (SELECT public.get_my_hostel_ids())
+        ) INTO v_is_valid;
+        
+        IF NOT v_is_valid THEN
+            RAISE EXCEPTION 'Unauthorized for this student';
+        END IF;
+    END IF;
+    
     INSERT INTO public.fee_payments (student_id, amount, due_date, status, paid_date, recorded_by)
     VALUES (
         p_student_id, 
@@ -661,10 +680,39 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
+DECLARE
+    v_student_id uuid;
+    v_is_valid boolean;
+    v_role text;
 BEGIN
-    IF public.get_my_role() NOT IN ('admin', 'warden') THEN
+    v_role := public.get_my_role();
+    IF v_role NOT IN ('admin', 'warden') THEN
         RAISE EXCEPTION 'Unauthorized';
     END IF;
+    
+    IF p_status NOT IN ('approved', 'rejected') THEN
+        RAISE EXCEPTION 'Invalid status';
+    END IF;
+    
+    SELECT student_id INTO v_student_id FROM public.leave_requests WHERE id = p_request_id;
+    IF v_student_id IS NULL THEN
+        RAISE EXCEPTION 'Request not found';
+    END IF;
+    
+    IF v_role = 'warden' THEN
+        SELECT EXISTS (
+            SELECT 1 FROM public.room_allocations ra
+            JOIN public.rooms r ON ra.room_id = r.id
+            WHERE ra.student_id = v_student_id 
+              AND ra.status = 'active' 
+              AND r.hostel_id IN (SELECT public.get_my_hostel_ids())
+        ) INTO v_is_valid;
+        
+        IF NOT v_is_valid THEN
+            RAISE EXCEPTION 'Unauthorized for this student';
+        END IF;
+    END IF;
+    
     UPDATE public.leave_requests 
     SET status = p_status, reviewed_by = auth.uid()
     WHERE id = p_request_id;

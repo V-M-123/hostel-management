@@ -30,25 +30,10 @@ export async function getCurrentUser() {
     }
 
     const user = data.user;
-
-    // 1. Determine intended role from metadata or email naming convention
-    let inferredRole = user.user_metadata?.role;
-    const userEmail = (user.email || '').toLowerCase();
-    
-    if (!inferredRole) {
-      if (userEmail.startsWith('admin') || userEmail.includes('@admin') || userEmail.includes('admin@') || userEmail.includes('admin.')) {
-        inferredRole = 'admin';
-      } else if (userEmail.startsWith('warden') || userEmail.includes('@warden') || userEmail.includes('warden@') || userEmail.includes('warden.')) {
-        inferredRole = 'warden';
-      } else {
-        inferredRole = 'student';
-      }
-    }
-
     const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
     const phone = user.user_metadata?.phone || null;
 
-    // 2. Fetch existing profile
+    // 1. Fetch existing profile from database
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
@@ -60,7 +45,7 @@ export async function getCurrentUser() {
         return {
           ...profile,
           email: user.email,
-          role: profile.role || inferredRole
+          role: profile.role || 'student'
         };
       }
 
@@ -71,7 +56,7 @@ export async function getCurrentUser() {
       console.warn('[Auth] Profiles query exception:', err);
     }
 
-    // 3. Auto-provision profile if missing
+    // 2. Safe fallback provision for profiles missing from DB (default to 'student')
     try {
       const { data: newProfile } = await supabase
         .from('profiles')
@@ -79,7 +64,7 @@ export async function getCurrentUser() {
           id: user.id,
           full_name: fullName,
           phone: phone,
-          role: inferredRole
+          role: 'student'
         })
         .select()
         .maybeSingle();
@@ -88,7 +73,7 @@ export async function getCurrentUser() {
         return {
           ...newProfile,
           email: user.email,
-          role: newProfile.role || inferredRole
+          role: newProfile.role || 'student'
         };
       }
     } catch (err) {
@@ -100,7 +85,7 @@ export async function getCurrentUser() {
       email: user.email,
       full_name: fullName,
       phone: phone,
-      role: inferredRole
+      role: 'student'
     };
   } catch (globalErr) {
     console.error('[Auth] Critical getCurrentUser exception:', globalErr);

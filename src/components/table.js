@@ -40,13 +40,11 @@ export function renderTable(container, options) {
         const result = col.render(row[col.key], row);
         if (result instanceof HTMLElement) {
           td.appendChild(result);
-        } else if (typeof result === 'string' && /<[a-z][\s\S]*>/i.test(result)) {
-          td.innerHTML = result;
         } else {
-          td.textContent = result !== undefined && result !== null ? result : '';
+          td.textContent = result !== undefined && result !== null ? String(result) : '';
         }
       } else {
-        td.textContent = row[col.key] || '';
+        td.textContent = row[col.key] !== undefined && row[col.key] !== null ? String(row[col.key]) : '';
       }
       tr.appendChild(td);
     });
