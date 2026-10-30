@@ -1,5 +1,149 @@
-node_modules/
-dist/
+# ==============================================================================
+# SECRETS, CREDENTIALS & ENVIRONMENT VARIABLES
+# ==============================================================================
+# Environment files (root, backend, etc.)
 .env
 .env.*
+*.env
 !.env.example
+!.env.template
+
+# API keys, service accounts & credentials
+credentials.json
+client_secret*.json
+service-account*.json
+firebase-adminsdk*.json
+*secret*.json
+*token*.json
+auth*.json
+
+# Private keys, certificates & SSL
+*.pem
+*.key
+*.cer
+*.crt
+*.p12
+*.pfx
+*.pkcs12
+*.der
+*.keystore
+id_rsa*
+id_ed25519*
+id_ecdsa*
+/nginx/ssl/
+/nginx/certs/
+/ssl/
+/certs/
+
+# Secret config files
+secrets.yml
+secrets.yaml
+secrets.json
+
+# ==============================================================================
+# DATABASE DUMPS & LOCAL DATA STORAGE
+# ==============================================================================
+# Local database files & runtime stores
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+
+# Database dumps and backups (protecting production/seed user data)
+*.dump
+*.bak
+*.backup
+*.sql.gz
+*.sql.tar.gz
+dump.sql
+backup_*.sql
+
+# Local persistent database volumes
+/data/
+/db_data/
+/mysql_data/
+/postgres_data/
+
+# ==============================================================================
+# LOGS, AUDITS & TEST RESULTS
+# ==============================================================================
+# Application & server logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Security audit & load test result dumps
+/reports/
+security_report*.json
+security_report*.html
+audit_report*.json
+load_test_results*.json
+
+# ==============================================================================
+# DEPENDENCIES
+# ==============================================================================
+node_modules/
+backend/node_modules/
+.pnp
+.pnp.js
+
+# ==============================================================================
+# BUILD OUTPUTS & PRODUCTION ARTIFACTS
+# ==============================================================================
+dist/
+build/
+out/
+.cache/
+.parcel-cache/
+.turbo/
+
+# ==============================================================================
+# TEST COVERAGE & RUNTIME METRICS
+# ==============================================================================
+coverage/
+.nyc_output/
+.clinic/
+
+# ==============================================================================
+# RUNTIME, PID & TEMPORARY FILES
+# ==============================================================================
+pids
+*.pid
+*.seed
+*.pid.lock
+tmp/
+temp/
+*.tmp
+*.temp
+
+# ==============================================================================
+# OS & IDE SYSTEM ARTIFACTS
+# ==============================================================================
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# IDEs & Editors
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swo
+.history/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
