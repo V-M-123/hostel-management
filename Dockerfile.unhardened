@@ -1,0 +1,24 @@
+# ==============================================================================
+# UNHARDENED DOCKERFILE (FOR TRIVY BASELINE VULNERABILITY COMPARISON)
+# ==============================================================================
+# - Heavy full-OS Debian base image (node:20)
+# - Runs as unconfined 'root' superuser
+# - Contains unnecessary system packages and compilers
+# ==============================================================================
+
+FROM node:20
+
+WORKDIR /app
+
+# Copy all files directly
+COPY backend/package*.json ./
+
+RUN npm install
+
+COPY backend/ ./
+
+# Expose default port
+EXPOSE 3000
+
+# Runs as root by default (Security Vulnerability: Container Breakout Risk)
+CMD ["node", "server.js"]
